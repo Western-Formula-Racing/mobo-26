@@ -1,0 +1,9 @@
+this directory is intended for project code components. Each component is comprised of a header (.h) and source (.c) file.
+
+To create a new component, the folder structure should look like this:
+
+| - components 
+|  | - CAN
+|  |  | - CAN.h
+|  |  | - CAN.c
+|  |  | - CMakeLists.txt
