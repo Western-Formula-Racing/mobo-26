@@ -1,0 +1,1 @@
+idf_component_register(SRCS "periodic.c" INCLUDE_DIRS "." "../../include" REQUIRES "io" "CAN")
