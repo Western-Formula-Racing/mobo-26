@@ -9,6 +9,12 @@
 void app_main() {
   static const char* TAG = "Main";
 
+  //set log levels for each component
+  esp_log_level_set("CAN", CONFIG_LOG_MAXIMUM_LEVEL);
+  esp_log_level_set("io", CONFIG_LOG_MAXIMUM_LEVEL);
+  esp_log_level_set("periodic", CONFIG_LOG_MAXIMUM_LEVEL);
+  esp_log_level_set("statemachine", CONFIG_LOG_MAXIMUM_LEVEL);
+  
   //init functions go here
   initGPIO();
 
@@ -21,5 +27,10 @@ void app_main() {
   }
 
   vTaskStartScheduler();
+
+  while(1){
+    vTaskDelay(pdMS_TO_TICKS(1000));
+    ESP_LOGI(TAG, "heartbeat.");
+  }
 
 }

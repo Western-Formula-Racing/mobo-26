@@ -5,37 +5,52 @@
 
 static const char* TAG = "CAN";
 
+twai_node_handle_t mobo_node_handle = NULL;
+
+// callback for recieving messages
+static bool can_rx_cb(twai_node_handle_t handle, const twai_rx_done_event_data_t *edata, void *user_ctx) {
+  uint8_t recv_buff[8];
+  twai_frame_t rx_frame = {
+    .buffer = recv_buff,
+    .buffer_len = sizeof(recv_buff),
+  };
+  if (ESP_OK == twai_node_receive_from_isr(handle, &rx_frame)) {
+    ESP_LOGI(TAG,"Recieved bits: %X,%X,%X,%X,%X,%X,%X,%X",recv_buff[0],recv_buff[1],recv_buff[2],recv_buff[3],recv_buff[4],recv_buff[5],recv_buff[6],recv_buff[7]);
+  }
+  return false;
+}
+
 // init CAN
 void initCAN(){
-
-  uint32_t alerts_to_enable = TWAI_ALERT_ABOVE_ERR_WARN|TWAI_ALERT_ERR_ACTIVE|TWAI_ALERT_RX_QUEUE_FULL;
-
-  twai_general_config_t g_config = TWAI_GENERAL_CONFIG_DEFAULT(GPIO_CAN_TX,GPIO_CAN_RX,TWAI_MODE_NORMAL);
-  twai_timing_config_t t_config = TWAI_TIMING_CONFIG_500KBITS();
-  twai_filter_config_t f_config = TWAI_FILTER_CONFIG_ACCEPT_ALL();
+  //configure TWAI node
+  twai_onchip_node_config_t node_config = {
+    .io_cfg.tx = GPIO_CAN_TX,             // TWAI TX GPIO pin
+    .io_cfg.rx = GPIO_CAN_RX,             // TWAI RX GPIO pin
+    .bit_timing.bitrate = 500000,  // 500 kbps bitrate
+    .tx_queue_depth = 5,           // Transmit queue depth set to 5
+    .fail_retry_cnt = 1,            // retry tx 1 time on fail
+  };
+  ESP_ERROR_CHECK(twai_new_node_onchip(&node_config, &mobo_node_handle));
   
-  ESP_ERROR_CHECK(twai_driver_install(&g_config, &t_config, &f_config));
-  ESP_LOGI(TAG, "CAN Driver Installed\n");
-  ESP_ERROR_CHECK(twai_reconfigure_alerts(alerts_to_enable,NULL));
-  // Start TWAI driver
-  ESP_ERROR_CHECK(twai_start());
+  //create RX callback
+  twai_event_callbacks_t user_cbs = {
+    .on_rx_done = can_rx_cb,
+  };
+  ESP_ERROR_CHECK(twai_node_register_event_callbacks(mobo_node_handle, &user_cbs, NULL));
+  
+  // Start the TWAI controller
+  ESP_ERROR_CHECK(twai_node_enable(mobo_node_handle));
 }
 
 // CAN message transmission
 int txCounter = 0;
-twai_message_t txMessage = {
+uint8_t canTxBuffer[8] = {0};
 
-  // Message type and format settings
-    .extd = 0,              // Standard vs extended format
-    .rtr = 0,                // Data vs RTR frame
-    .ss = 0,                // Whether the message is single shot (i.e., does not repeat on error)
-    .self = 0,              // Whether the message is a self reception request (loopback)
-    .dlc_non_comp = 0,      // DLC is less than 8
-    .reserved = 0,          // Reserved field
-  // Message ID and payload
-  .identifier = 0,
-  .data_length_code = 8,
-  .data = {0,0,0,0,0,0,0,0},
+twai_frame_t txMessage = {
+  .header.id = 0x0,            // Message ID
+  .header.ide = false,          // Use 29-bit extended ID format
+  .buffer = canTxBuffer, // Pointer to data to transmit
+  .buffer_len = 8,             // Length of data to transmit
 };
 
 // Periodic function for transmission of CAN messages
