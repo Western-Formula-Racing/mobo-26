@@ -7,6 +7,10 @@ static const char* TAG = "CAN";
 
 twai_node_handle_t mobo_node_handle = NULL;
 
+void parseCanMessage(int id, uint8_t* data){
+  
+}
+
 // callback for recieving messages
 static bool can_rx_cb(twai_node_handle_t handle, const twai_rx_done_event_data_t *edata, void *user_ctx) {
   uint8_t recv_buff[8];
@@ -14,7 +18,7 @@ static bool can_rx_cb(twai_node_handle_t handle, const twai_rx_done_event_data_t
     .buffer = recv_buff,
     .buffer_len = sizeof(recv_buff),
   };
-  if (ESP_OK == twai_node_receive_from_isr(handle, &rx_frame)) {
+  if (ESP_OK == twai_node_receive_from_isr(mobo_node_handle, &rx_frame)) {
     ESP_LOGI(TAG,"Recieved bits: %X,%X,%X,%X,%X,%X,%X,%X",recv_buff[0],recv_buff[1],recv_buff[2],recv_buff[3],recv_buff[4],recv_buff[5],recv_buff[6],recv_buff[7]);
   }
   return false;

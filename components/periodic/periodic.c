@@ -8,6 +8,6 @@ static const char* TAG = "periodic.c";
 
 // main periodic callback function
 void periodicCallback(TimerHandle_t xTimer){
-  relayPeriodic(); // get relay states
+  ioPeriodic(); // get relay states
   canTxPeriodic(); // send CAN messages
 }

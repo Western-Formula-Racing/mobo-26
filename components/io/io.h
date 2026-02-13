@@ -1,13 +1,14 @@
 #include "freertos/FreeRTOS.h"
-#define RELAY_BUFFER_SIZE 5
+#define INPUT_BUFFER_SIZE 5
 
-enum relays_e{
+enum digitalInputs_e{
   IMD_RELAY,
   BSPD_RELAY,
   LATCH_RELAY,
   AIRN_RELAY,
   AIRP_RELAY,
-  RELAYS_COUNT
+  CHARGE_EN,
+  INPUTS_COUNT
 };
 
 enum analog_e{
@@ -15,9 +16,16 @@ enum analog_e{
   ANALOG_COUNT,
 };
 
-extern uint8_t relayStates[RELAYS_COUNT];
+enum digitalOutputs_e{
+  GPIO_BMS_OK,
+  GPIO_PRECH_OK,
+  GPIO_RED_LED,
+  GPIO_GREEN_LED,
+};
+
+extern uint8_t inputStates[INPUTS_COUNT];
 extern float   analogVoltages[ANALOG_COUNT];
 
 void initGPIO();
-void relayPeriodic(); 
+void ioPeriodic(); 
 esp_err_t enablePrecharge();

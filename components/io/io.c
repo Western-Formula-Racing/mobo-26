@@ -2,8 +2,8 @@
 #include "io.h"
 #include "esp_log.h"
 
-uint8_t relayBuffers[RELAYS_COUNT][RELAY_BUFFER_SIZE] = {};
-uint8_t relayStates[RELAYS_COUNT] = {};
+uint8_t inputBuffers[INPUTS_COUNT][INPUT_BUFFER_SIZE] = {};
+uint8_t relayStates[INPUTS_COUNT] = {};
 float   analogVoltages[ANALOG_COUNT] = {};
 
 static const char* TAG = "io"; 
@@ -25,34 +25,49 @@ void initGPIO(){
   gpio_config(&io_cfg); // config outputs
 }
 
-// Periodic function to update relay inputs
-void relayPeriodic(){
-  int updateState = 0;
+
+// update digital inputs
+void digitalInputs(){
+  int doUpdate = 0;
   // shift relay buffers right
-  for(int i = 0; i < RELAYS_COUNT; i++){
-    for(int j = RELAY_BUFFER_SIZE; j > 0; j--){
-      relayBuffers[i][j] = relayBuffers[i][j-1];
+  for(int i = 0; i < INPUTS_COUNT; i++){
+    for(int j = INPUT_BUFFER_SIZE; j > 0; j--){
+      inputBuffers[i][j] = inputBuffers[i][j-1];
     }
   }
   // update first element
-  relayBuffers[IMD_RELAY][0]   = gpio_get_level(GPIO_IMD);
-  relayBuffers[BSPD_RELAY][0]  = gpio_get_level(GPIO_BSPD);
-  relayBuffers[LATCH_RELAY][0] = gpio_get_level(GPIO_LATCH);
-  relayBuffers[AIRN_RELAY][0]  = gpio_get_level(GPIO_AIRN);
-  relayBuffers[AIRP_RELAY][0]  = gpio_get_level(GPIO_AIRP);
+  inputBuffers[IMD_RELAY][0]   = gpio_get_level(GPIO_IMD);
+  inputBuffers[BSPD_RELAY][0]  = gpio_get_level(GPIO_BSPD);
+  inputBuffers[LATCH_RELAY][0] = gpio_get_level(GPIO_LATCH);
+  inputBuffers[AIRN_RELAY][0]  = gpio_get_level(GPIO_AIRN);
+  inputBuffers[AIRP_RELAY][0]  = gpio_get_level(GPIO_AIRP);
+  inputBuffers[CHARGE_EN][0]  = gpio_get_level(GPIO_CHARGE_EN);
   // update relay status based on buffer content
-  for(int i = 0; i < RELAYS_COUNT; i++){
-    updateState = 1;
+  for(int i = 0; i < INPUTS_COUNT; i++){
+    doUpdate = 1;
     // check if all elements are equal
-    for(int j = 0; j < RELAY_BUFFER_SIZE; j++){
-      if(relayBuffers[i][j] != relayBuffers[i][j+1]){
-        updateState = 0;
+    for(int j = 0; j < INPUT_BUFFER_SIZE; j++){
+      if(inputBuffers[i][j] != inputBuffers[i][j+1]){
+        doUpdate = 0;
       }
     }
     // if all elements are equal, update 
-    if(updateState == 1){
-      relayStates[i] = relayBuffers[i][0];
-      ESP_LOGI(TAG,"Relay %d updated to %d, array values: [%d, %d, %d, %d, %d]",i, relayStates[i], relayBuffers[i][0], relayBuffers[i][1], relayBuffers[i][2], relayBuffers[i][3], relayBuffers[i][4]);
+    if(doUpdate == 1){
+      inputStates[i] = inputBuffers[i][0];
+      ESP_LOGI(TAG,"input %d updated to %d, array values: [%d, %d, %d, %d, %d]",i, inputStates[i], inputBuffers[i][0], inputBuffers[i][1], inputBuffers[i][2], inputBuffers[i][3], inputBuffers[i][4]);
     }
   }
+}
+
+// update analog inputs
+// TODO
+
+// update digital outputs
+void digitalOutputs(){
+
+}
+// IO Periodic function
+void ioPeriodic(){
+  digitalInputs();
+  digitalOutputs();
 }
