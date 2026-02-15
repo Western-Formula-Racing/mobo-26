@@ -1,18 +1,19 @@
 #include "freertos/FreeRTOS.h"
+#include "esp_log.h"
 #include "BMS.h"
 
 const char* TAG = "BMS";
 
 Module modules[5];
 
-void setModuleVoltage(int module, int cell, double newVoltage){
+void setModuleVoltage(int module, int cell, float newVoltage){
   if(module < 6 && cell <21){
     modules[module].voltages[cell] = newVoltage;
   } 
   else{ESP_LOGE(TAG, "Cell index out of range!");}
 }
 
-void setModuleTemp(int module, int thermistor, double newTemp){
+void setModuleTemp(int module, int thermistor, float newTemp){
   if(module < 6 && thermistor <19){
     modules[module].temps[thermistor] = newTemp;
   } 
@@ -29,8 +30,8 @@ float getPackVoltage(){
   return total;
 }
 
-double getMaxTemp(){
-  double max = 0;
+float getMaxTemp(){
+  float max = 0;
   for(int i=0;i<5;i++){
     for(int j=0;j<18;j++){
       if(max<modules[i].temps[j]){
@@ -41,8 +42,18 @@ double getMaxTemp(){
   return max;
 }
 
-double getMaxVoltage(){
-  double max = 0;
+float getMinTemp(){
+  float min = 100;
+  for(int i=0;i<5;i++){
+    for(int j=0;j<18;j++){
+      if(min>modules[i].temps[j]) min = modules[i].temps[j];
+    }
+  }
+  return min;
+}
+
+float getMaxVoltage(){
+  float max = 0;
   for(int i=0;i<5;i++){
     for(int j=0;j<20;j++){
       if(max<modules[i].voltages[j]){ 
@@ -53,14 +64,24 @@ double getMaxVoltage(){
   return max;
 }
 
-double getMinVoltage(){
-  double min = 100;
+float getMinVoltage(){
+  float min = 100;
   for(int i=0;i<5;i++){
     for(int j=0;j<20;j++){
       if(min>modules[i].voltages[j]) min = modules[i].voltages[j];
     }
   }
   return min;
+}
+
+int getMaxModuleTimeout(){
+  int max = 0;
+  for(int i = 0; i < 5; i++){
+    if(modules[i].timeout > max){
+      max = modules[i].timeout;
+    }
+  }
+  return max;
 }
 
 //serial debugging

@@ -1,5 +1,8 @@
 #include "freertos/FreeRTOS.h"
+#include "hw_define.h"
 #define INPUT_BUFFER_SIZE 5
+#define Cursense_VtoA(v) (v)
+#define Vsense_VtoV(v) (v)
 
 enum digitalInputs_e{
   IMD_RELAY,
@@ -12,20 +15,23 @@ enum digitalInputs_e{
 };
 
 enum analog_e{
-  ANALOG_PRECHARGE,
+  ANALOG_VSENSE,
+  ANALOG_CURSENSE,
   ANALOG_COUNT,
 };
 
 enum digitalOutputs_e{
-  GPIO_BMS_OK,
-  GPIO_PRECH_OK,
-  GPIO_RED_LED,
-  GPIO_GREEN_LED,
+  OUTPUTS_BMS_OK,
+  OUTPUTS_PRECH_OK,
+  OUTPUTS_RED_LED,
+  OUTPUTS_GREEN_LED,
+  OUTPUTS_COUNT,
 };
 
 extern uint8_t inputStates[INPUTS_COUNT];
+extern uint8_t outputStates[OUTPUTS_COUNT];
 extern float   analogVoltages[ANALOG_COUNT];
 
-void initGPIO();
-void ioPeriodic(); 
+void initIO();
+void ioPeriodic();
 esp_err_t enablePrecharge();

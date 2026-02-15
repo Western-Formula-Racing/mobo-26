@@ -33,11 +33,12 @@ enum error_e {
 };
 
 typedef struct{
-  error_e error;
-  state_e currentState;
-  state_e lastState;
+  enum error_e error;
+  enum state_e currentState;
+  enum state_e lastState;
   uint64_t prechargeStartTime;
 } state_t;
 
+extern state_t moboState;
 
 void stateMachinePeriodic();
