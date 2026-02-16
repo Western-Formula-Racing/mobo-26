@@ -4,6 +4,7 @@
 #include "CAN.h"
 #include "io.h"
 #include "periodic.h"
+#include "telemetry.h"
 
 // Code entry point
 void app_main() {
@@ -14,8 +15,10 @@ void app_main() {
   esp_log_level_set("io", CONFIG_LOG_MAXIMUM_LEVEL);
   esp_log_level_set("periodic", CONFIG_LOG_MAXIMUM_LEVEL);
   esp_log_level_set("statemachine", CONFIG_LOG_MAXIMUM_LEVEL);
+  esp_log_level_set("telemetry", CONFIG_LOG_MAXIMUM_LEVEL);
   
   //init functions go here
+  initTelemetry();
   initIO();
   initCAN();
 
