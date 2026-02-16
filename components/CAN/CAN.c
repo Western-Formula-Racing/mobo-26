@@ -10,6 +10,7 @@
 #include "io.h"
 #include "statemachine.h"
 #include "config.h"
+#include "telemetry.h"
 
 static const char* TAG = "CAN";
 
@@ -41,6 +42,7 @@ void canTask(void *arg)
       ESP_LOGI(TAG, "Recieved frame!");
       union CANBuffer_u rx_data;
       memcpy(rx_data.array, rx_frame.buffer, 8);
+      telemetryQueueFrame(rx_frame.header.id, rx_data.array, 8);
       // ESP_LOGI(TAG,"Recieved bits: %X,%X,%X,%X,%X,%X,%X,%X",rx_data.array[0],rx_data.array[1],rx_data.array[2],rx_data.array[3],rx_data.array[4],rx_data.array[5],rx_data.array[6],rx_data.array[7]);
       // Module voltages
       if(rx_frame.header.id >= 1006 && rx_frame.header.id <= 1030){
