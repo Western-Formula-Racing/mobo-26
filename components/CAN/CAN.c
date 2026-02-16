@@ -91,6 +91,7 @@ void canTask(void *arg)
     //update module timeout
     for(int i = 0; i < 5; i++){
       modules[i].timeout = pdTICKS_TO_MS(xTaskGetTickCount() - lastModuleTimestamp[i]);
+    }
   }
 }
 
@@ -209,10 +210,10 @@ void canTxPeriodic(){
     //charging message
     txMessage.header.ide = true;
     txMessage.header.id = id_ElconLimits;
-    canTxBuffer.elconLimits.maxChargeCurrent_lo = (CHARGE_TARGET * 10) & 0xFF;
-    canTxBuffer.elconLimits.maxChargeCurrent_hi = ((CHARGE_TARGET * 10) & 0xFF00)<<8;
+    canTxBuffer.elconLimits.maxChargeVoltage_lo = (CHARGE_TARGET * 10) & 0xFF;
+    canTxBuffer.elconLimits.maxChargeVoltage_hi = ((CHARGE_TARGET * 10) & 0xFF00) >> 8;
     canTxBuffer.elconLimits.maxChargeCurrent_lo = (CHARGE_CURRENT * 10) & 0xFF;
-    canTxBuffer.elconLimits.maxChargeCurrent_hi = ((CHARGE_CURRENT * 10) & 0xFF00)<<8;
+    canTxBuffer.elconLimits.maxChargeCurrent_hi = ((CHARGE_CURRENT * 10) & 0xFF00) >> 8;
     canTxBuffer.elconLimits.control = moboState.currentState == CHARGING ? 1 : 0;
     txMessage.buffer = canTxBuffer.array;
     twai_node_transmit(mobo_node_handle, &txMessage,0);
