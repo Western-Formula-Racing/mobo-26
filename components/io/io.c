@@ -15,6 +15,11 @@ spi_device_handle_t adcHandle;
 
 static const char* TAG = "io"; 
 
+// ADC filtering config
+#define ADC_SAMPLE_COUNT 16 // number of samples for moving-average filter
+static uint16_t adcSampleBuffers[ANALOG_COUNT][ADC_SAMPLE_COUNT] = {{0}};
+static uint8_t adcSampleIndex[ANALOG_COUNT] = {0};
+
 // initilaize digital input/output pins 
 void initIO(){
   //GPIO
@@ -33,24 +38,31 @@ void initIO(){
   
   gpio_config(&io_cfg); // config outputs
   //SPI init
-  //ESP_LOGI(TAG, "Initializing SPI...");
-  //spi_bus_config_t buscfg={
-  //  .miso_io_num=GPIO_MISO,
-  //  .mosi_io_num=GPIO_MOSI,
-  //  .sclk_io_num=GPIO_SCK,
-  //  .quadwp_io_num=-1,
-  //  .quadhd_io_num=-1,
-  //};
-  //ESP_ERROR_CHECK(spi_bus_initialize(SPI2_HOST, &buscfg, SPI_DMA_CH_AUTO));
-  //ESP_LOGI(TAG, "SPI initialized");
-  //spi_device_interface_config_t adcCfg = {
-  //  .clock_speed_hz = 1*1000*1000,        //Clock out at 1 MHz
-  //  .mode = 2,                            //SPI mode 1
-  //  .spics_io_num = ADC_CS,               //CS pin
-  //  .queue_size = 5,
-  //};
-  //ESP_LOGI(TAG, "Adding ADC device");
-  //ESP_ERROR_CHECK(spi_bus_add_device(SPI2_HOST, &adcCfg, &adcHandle));
+  ESP_LOGI(TAG, "Initializing SPI...");
+  spi_bus_config_t buscfg={
+    .miso_io_num=GPIO_MISO,
+    .mosi_io_num=GPIO_MOSI,
+    .sclk_io_num=GPIO_SCK,
+    .quadwp_io_num=-1,
+    .quadhd_io_num=-1,
+  };
+  ESP_ERROR_CHECK(spi_bus_initialize(SPI2_HOST, &buscfg, SPI_DMA_CH_AUTO));
+  ESP_LOGI(TAG, "SPI initialized");
+  spi_device_interface_config_t adcCfg = {
+    .clock_speed_hz = 1*1000*1000,        //Clock out at 1 MHz
+    .mode = 2,                            //SPI mode 1
+    .spics_io_num = ADC_CS,               //CS pin
+    .queue_size = 5,
+  };
+  ESP_LOGI(TAG, "Adding ADC device");
+  ESP_ERROR_CHECK(spi_bus_add_device(SPI2_HOST, &adcCfg, &adcHandle));
+  uint8_t txWrite[6] = {0b10001110, 0b01000000, 0, 0, 0, 0}; // Write 0x8440 (bit 6 = internal ref)
+  spi_transaction_t t_write = {
+    .length = 48,
+    .tx_buffer = txWrite,
+    .rx_buffer = NULL
+  };
+  spi_device_transmit(adcHandle, &t_write);
 }
 
 // update digital inputs
@@ -90,41 +102,39 @@ void digitalInputs(){
 
 // update analog inputs
 void analogInputs(){
- // FRAME F: Write config register
-uint8_t txWrite[6] = {0x84, 0x40, 0, 0, 0, 0}; // Write 0x8440 (bit 6 = internal ref)
-spi_transaction_t t_write = {
-  .length = 48,
-  .tx_buffer = txWrite,
-  .rx_buffer = NULL
-};
-spi_device_transmit(adcHandle, &t_write);
-vTaskDelay(pdMS_TO_TICKS(1)); // Wait 1ms between frames
+  uint8_t txDummy[6] = {0, 0, 0, 0, 0, 0}; // Dummy data
+  uint8_t rxData[6] = {0};
+  spi_transaction_t t_receive = {
+    .length = 48,           // Send 48 SCLK (6 bytes)
+    .tx_buffer = txDummy,
+    .rx_buffer = rxData     // Response comes in first 2 bytes
+  };
+  spi_device_transmit(adcHandle, &t_receive);
 
-// FRAME F+1: Send READ command (48 SCLK minimum)
-uint8_t txReadCmd[6] = {0x30, 0x00, 0, 0, 0, 0}; // Read command: 0x3000
-spi_transaction_t t_readcmd = {
-  .length = 48,
-  .tx_buffer = txReadCmd,
-  .rx_buffer = NULL  // Ignore MISO during this frame
-};
-spi_device_transmit(adcHandle, &t_readcmd);
-vTaskDelay(pdMS_TO_TICKS(1)); // Small delay between frames
-//
-//// FRAME F+2: Send dummy data and receive response (first 16 SCLK = 2 bytes)
-//uint8_t txDummy[6] = {0, 0, 0, 0, 0, 0}; // Dummy data
-//uint8_t rxData[6] = {0};
-//spi_transaction_t t_receive = {
-//  .length = 48,           // Send 48 SCLK (6 bytes)
-//  .tx_buffer = txDummy,
-//  .rx_buffer = rxData     // Response comes in first 2 bytes
-//};
-//spi_device_transmit(adcHandle, &t_receive);
-//
-//// Response is in FIRST 2 bytes (first 16 SCLK falling edges)
-//uint16_t config = ((uint16_t)rxData[0] << 8) | rxData[1];
-//ESP_LOGI(TAG, "Config register: 0x%03X", config & 0x0FFF);
-//ESP_LOGI(TAG, "Raw received: %02X %02X %02X %02X %02X %02X",
-//         rxData[0], rxData[1], rxData[2], rxData[3], rxData[4], rxData[5]);
+  // Parse 14-bit raw ADC values (two channels per transfer)
+  uint16_t rawValue1 = ((rxData[0] & 0xFF) << 8) | rxData[1]; // 14-bit value from first 2 bytes
+  uint16_t rawValue2 = ((rxData[2] & 0xFF) << 8) | rxData[3]; // 14-bit value from next 2 bytes
+
+  // Push new samples into circular buffers and compute moving average
+  const float adcMax = 16383.0f; // 14-bit max (2^14 - 1)
+  uint32_t sum0 = 0;
+  uint32_t sum1 = 0;
+
+  // channel 0
+  adcSampleBuffers[0][adcSampleIndex[0]] = rawValue1;
+  adcSampleIndex[0] = (adcSampleIndex[0] + 1) % ADC_SAMPLE_COUNT;
+  for(int i=0;i<ADC_SAMPLE_COUNT;i++) sum0 += adcSampleBuffers[0][i];
+  uint16_t avgRaw0 = (uint16_t)(sum0 / ADC_SAMPLE_COUNT);
+
+  // channel 1
+  adcSampleBuffers[1][adcSampleIndex[1]] = rawValue2;
+  adcSampleIndex[1] = (adcSampleIndex[1] + 1) % ADC_SAMPLE_COUNT;
+  for(int i=0;i<ADC_SAMPLE_COUNT;i++) sum1 += adcSampleBuffers[1][i];
+  uint16_t avgRaw1 = (uint16_t)(sum1 / ADC_SAMPLE_COUNT);
+
+  // Convert averaged ADC counts to voltage assuming 5.0V reference
+  analogVoltages[ANALOG_CURSENSE] = ((float)avgRaw0 / adcMax) * 5.0f;
+  analogVoltages[ANALOG_VSENSE] = ((float)avgRaw1 / adcMax) * 5.0f;
 }
 
 // update digital outputs
@@ -137,6 +147,6 @@ void digitalOutputs(){
 // IO Periodic function
 void ioPeriodic(){
   digitalInputs();
-  //analogInputs();
+  analogInputs();
   digitalOutputs();
 }

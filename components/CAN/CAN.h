@@ -13,6 +13,7 @@ extern int bus_recovery_attempts;
 
 void initCAN();
 void canTxPeriodic();
+void printCANInfo();
 
 union CANBuffer_u{
   uint8_t array[8];

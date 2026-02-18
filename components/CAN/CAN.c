@@ -38,7 +38,7 @@ void canTask(void *arg)
 
   while (1) {
     if (xQueueReceive(canRxQueue, &rx_frame, portMAX_DELAY)) {
-      ESP_LOGI(TAG, "Recieved frame!");
+      //ESP_LOGI(TAG, "Recieved frame!");
       union CANBuffer_u rx_data;
       memcpy(rx_data.array, rx_frame.buffer, 8);
       // ESP_LOGI(TAG,"Recieved bits: %X,%X,%X,%X,%X,%X,%X,%X",rx_data.array[0],rx_data.array[1],rx_data.array[2],rx_data.array[3],rx_data.array[4],rx_data.array[5],rx_data.array[6],rx_data.array[7]);
@@ -89,9 +89,9 @@ void canTask(void *arg)
     //update module timeout
     for(int i = 0; i < 5; i++){
       modules[i].timeout = pdTICKS_TO_MS(xTaskGetTickCount() - lastModuleTimestamp[i]);
+    }
   }
 }
-
 
 static bool can_rx_cb(twai_node_handle_t handle, const twai_rx_done_event_data_t *edata, void *user_ctx) {
     twai_frame_t rx_frame;
@@ -208,10 +208,10 @@ void canTxPeriodic(){
     txMessage.header.ide = true;
     txMessage.header.id = id_ElconLimits;
     canTxBuffer.elconLimits.maxChargeCurrent_lo = (CHARGE_TARGET * 10) & 0xFF;
-    canTxBuffer.elconLimits.maxChargeCurrent_hi = ((CHARGE_TARGET * 10) & 0xFF00)<<8;
+    canTxBuffer.elconLimits.maxChargeCurrent_hi = ((CHARGE_TARGET * 10) & 0xFF00)>>8;
     canTxBuffer.elconLimits.maxChargeCurrent_lo = (CHARGE_CURRENT * 10) & 0xFF;
-    canTxBuffer.elconLimits.maxChargeCurrent_hi = ((CHARGE_CURRENT * 10) & 0xFF00)<<8;
-    canTxBuffer.elconLimits.control = moboState.currentState == CHARGING ? 1 : 0;
+    canTxBuffer.elconLimits.maxChargeCurrent_hi = ((CHARGE_CURRENT * 10) & 0xFF00)>>8;
+    canTxBuffer.elconLimits.control = moboState.currentState == CHARGING ? 0 : 1;
     txMessage.buffer = canTxBuffer.array;
     twai_node_transmit(mobo_node_handle, &txMessage,0);
     txMessage.header.ide = false;

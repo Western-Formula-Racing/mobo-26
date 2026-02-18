@@ -2,7 +2,9 @@
 #include "hw_define.h"
 #define INPUT_BUFFER_SIZE 5
 #define Cursense_VtoA(v) (v)
-#define Vsense_VtoV(v) (v)
+//60v = 0.355v on ADC
+
+#define Vsense_VtoV(v) (v)*169.014
 
 enum digitalInputs_e{
   IMD_RELAY,
