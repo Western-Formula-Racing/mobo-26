@@ -103,9 +103,9 @@ void printModules(){
       for(int i =0;i<4;i++){
         if(i+k*4<18){
           printf("|%.3f",modules[j].temps[i+k*4]);
-        } else{printf("|x.xxx");}
+        } else{printf("|____");}
       }
-      printf("| ");
+      printf("___|___");
     }
     printf("\n");
   }

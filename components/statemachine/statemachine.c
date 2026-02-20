@@ -8,6 +8,7 @@
 state_t moboState;
 static const char* TAG = "statemachine";
 
+
 void stateTransition(){
   
   switch(moboState.currentState){
@@ -16,7 +17,7 @@ void stateTransition(){
       // check for precharge start
       if(inputStates[AIRN_RELAY] == 1 && inputStates[LATCH_RELAY] == 1 && inputStates[BSPD_RELAY] == 1 && inputStates[IMD_RELAY] == 1){
         moboState.currentState = PRECHARGE;
-        moboState.lastState = IDLE;
+        moboState.lastState = IDLE; 
         moboState.prechargeStartTime = pdTICKS_TO_MS(xTaskGetTickCount());
         ESP_LOGI(TAG, "IDLE -> PRECHARGE");
       }
@@ -76,10 +77,10 @@ void errorCheck(){
     moboState.currentState = FAULT;
     ESP_LOGE(TAG, "Fault: OVERTEMP");
   } else if(getMaxVoltage() > OVERVOLTAGE_THRESHOLD){
-    moboState.error = OVERVOLTAGE;
-    moboState.lastState = moboState.currentState;
-    moboState.currentState = FAULT;
-    ESP_LOGE(TAG, "Fault: OVERVOLTAGE");
+      moboState.error = OVERVOLTAGE;
+      moboState.lastState = moboState.currentState;
+      moboState.currentState = FAULT;
+      ESP_LOGE(TAG, "Fault: OVERVOLTAGE");
   } else if(getMinVoltage() < UNDERVOLTAGE_THRESHOLD && getMinVoltage() > 0){ // if voltage is 0, it's likely an open circuit which is a different fault
     moboState.error = UNDERVOLTAGE;
     moboState.lastState = moboState.currentState;
