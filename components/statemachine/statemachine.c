@@ -8,6 +8,7 @@
 state_t moboState;
 static const char* TAG = "statemachine";
 uint8_t module, errIndex;
+uint8_t module, errIndex;
 
 
 void stateTransition(){
