@@ -7,7 +7,7 @@
 
 state_t moboState;
 static const char* TAG = "statemachine";
-uint8_t module, index;
+uint8_t module, errIndex;
 
 void stateTransition(){
   switch(moboState.currentState){
@@ -72,25 +72,25 @@ void errorCheck(){
   // skip check if already in fault state
   if (moboState.currentState == FAULT) return; 
   // 2 error check levels: mission mode for only critical faults, and test mode for all faults
-  if(getMaxTempIndex(&module, &index) > OVERTEMP_THRESHOLD){
+  if(getMaxTempIndex(&module, &errIndex) > OVERTEMP_THRESHOLD){
     moboState.error = OVERTEMP;
     moboState.lastState = moboState.currentState;
     moboState.currentState = FAULT;
-    moboState.errorIndex = index;
+    moboState.errorIndex = errIndex;
     moboState.errorModule = module;
     ESP_LOGE(TAG, "Fault: OVERTEMP");
-  } else if(getMaxVoltageIndex(&module, &index) > OVERVOLTAGE_THRESHOLD){
+  } else if(getMaxVoltageIndex(&module, &errIndex) > OVERVOLTAGE_THRESHOLD){
     moboState.error = OVERVOLTAGE;
     moboState.lastState = moboState.currentState;
     moboState.currentState = FAULT;
-    moboState.errorIndex = index;
+    moboState.errorIndex = errIndex;
     moboState.errorModule = module;
     ESP_LOGE(TAG, "Fault: OVERVOLTAGE");
-  } else if(getMinVoltageIndex(&module, &index) < UNDERVOLTAGE_THRESHOLD && getMinVoltage() > 0){
+  } else if(getMinVoltageIndex(&module, &errIndex) < UNDERVOLTAGE_THRESHOLD && getMinVoltage() > 0){
     moboState.error = UNDERVOLTAGE;
     moboState.lastState = moboState.currentState;
     moboState.currentState = FAULT;
-    moboState.errorIndex = index;
+    moboState.errorIndex = errIndex;
     moboState.errorModule = module;
     ESP_LOGE(TAG, "Fault: UNDERVOLTAGE");
   } else if (Cursense_VtoA(analogVoltages[ANALOG_CURSENSE]) > CURRENT_LIMIT){
