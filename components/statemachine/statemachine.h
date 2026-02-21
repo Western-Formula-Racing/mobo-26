@@ -28,7 +28,7 @@ enum error_e {
   CRCFAIL,        //LTC6813 repeating CRC fail
   OVERCURRENT,    //Overcurrent fail
   CANTIMEOUT,     //Can Timeout fail
-  CANERROR,       //CAN errors > 96
+  CANERROR,       //CAN bus tried restarting >MAX_RECOVERY_ATTEMPTS times
   PRECHARGE_FAIL   //Precharge took longer than PRECHARGE_TIMEOUT
 };
 
@@ -37,8 +37,12 @@ typedef struct{
   enum state_e currentState;
   enum state_e lastState;
   uint64_t prechargeStartTime;
+  int errorIndex; // which cell/thermistor raised error (if applicable)
+  int errorModule; // which module raised the error
 } state_t;
 
 extern state_t moboState;
 
 void stateMachinePeriodic();
+void raiseTorchError(enum error_e error, int module);
+void printFault()

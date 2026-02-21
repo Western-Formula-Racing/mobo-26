@@ -83,6 +83,10 @@ void canTask(void *arg)
         }
 
         lastModuleTimestamp[module] = xTaskGetTickCount();
+      } else if (rx_frame.header.id == id_tochFault){
+        int error = rx_data.TORCHFault.faultCode;
+        int module = rx_data.TORCHFault.moduleID;
+        raiseTorchError(error, module);
       }
       else if (item.id == 1000) {
         uint8_t module_id = rx_data.array[0];
