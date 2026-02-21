@@ -6,7 +6,7 @@
 #include "statemachine.h"
 #include "BMS.h"
 
-//static const char* TAG = "periodic";
+static const char* TAG = "periodic";
 int periodicCount = 0;
 
 void printInfo(){

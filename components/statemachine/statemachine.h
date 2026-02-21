@@ -45,4 +45,4 @@ extern state_t moboState;
 
 void stateMachinePeriodic();
 void raiseTorchError(enum error_e error, int module);
-void printFault()
+void printFault();
