@@ -55,6 +55,10 @@ void canTask(void *arg)
         setModuleVoltage(module, cell++, s4);
 
         lastModuleTimestamp[module] = xTaskGetTickCount();
+      } else if (rx_frame.header.id == id_tochFault){
+        int error = rx_data.TORCHFault.faultCode;
+        int module = rx_data.TORCHFault.moduleID;
+        raiseTorchError(error, module);
       }
       else if (item.id >= 1031 && item.id <= 1055) {
         double s1 = (rx_data.BMSTemperatures.t1_lo | (rx_data.BMSTemperatures.t1_hi << 8)) * 0.001;
