@@ -74,6 +74,10 @@ void canTask(void *arg)
           setModuleTemp(module,cell++,s4);
         }
         lastModuleTimestamp[module] = xTaskGetTickCount();
+      } else if (rx_frame.header.id == id_tochFault){
+        int error = rx_data.TORCHFault.faultCode;
+        int module = rx_data.TORCHFault.moduleID;
+        raiseTorchError(error, module);
       }
     }
     twai_node_get_info(mobo_node_handle,&canStatus,&canRecord);

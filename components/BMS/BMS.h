@@ -15,11 +15,14 @@ void setModuleTemp(int module, int thermistor, float newTemp);
 // info for other functions
 float getPackVoltage();  // sum of all cell voltages
 float getMaxTemp();      // maximum thermistor temperature
+float getMaxTempIndex(uint8_t* module, uint8_t* index);
 float getMinTemp();      // minimum thermistor temperature
 float getMaxVoltage();   // maximum cell voltage
+float getMaxVoltageIndex(uint8_t* module, uint8_t* index);
 float getMinVoltage();   // minimum cell voltage
-float getPackVoltage();  // sum of all cell voltages
-int getMaxModuleTimeout(); // max time since last update for any module
+float getMinVoltageIndex(uint8_t* module, uint8_t* index);
+float getPackVoltage();  // sum of all cell voltage
+int getMaxModuleTimeout(uint8_t *module); // max time since last update for any module
 
 //serial debugging
 void printModules();

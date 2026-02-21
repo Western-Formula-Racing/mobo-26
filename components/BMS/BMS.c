@@ -42,6 +42,20 @@ float getMaxTemp(){
   return max;
 }
 
+float getMaxTempIndex(uint8_t* module, uint8_t* index){
+  float max = 0;
+  for(int i=0;i<5;i++){
+    for(int j=0;j<18;j++){
+      if(max<modules[i].temps[j]){
+        max = modules[i].temps[j];
+        *module = i;
+        *index = j;
+      }
+    }
+  }
+  return max;
+}
+
 float getMinTemp(){
   float min = 100;
   for(int i=0;i<5;i++){
@@ -64,6 +78,20 @@ float getMaxVoltage(){
   return max;
 }
 
+float getMaxVoltageIndex(uint8_t* module, uint8_t* index){
+  float max = 0;
+  for(int i=0;i<5;i++){
+    for(int j=0;j<20;j++){
+      if(max<modules[i].voltages[j]){ 
+        max = modules[i].voltages[j];
+        *module = i;
+        *index = j;
+      }
+    }
+  }
+  return max;
+}
+
 float getMinVoltage(){
   float min = 100;
   for(int i=0;i<5;i++){
@@ -74,11 +102,26 @@ float getMinVoltage(){
   return min;
 }
 
-int getMaxModuleTimeout(){
+float getMinVoltageIndex(uint8_t* module, uint8_t* index){
+  float min = 100;
+  for(int i=0;i<5;i++){
+    for(int j=0;j<20;j++){
+      if(min>modules[i].voltages[j]){
+        min = modules[i].voltages[j];
+        *module = i;
+        *index = j;
+      }
+    }
+  }
+  return min;
+}
+
+int getMaxModuleTimeout(uint8_t *module){
   int max = 0;
   for(int i = 0; i < 5; i++){
     if(modules[i].timeout > max){
       max = modules[i].timeout;
+      *module = i;
     }
   }
   return max;

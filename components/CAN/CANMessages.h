@@ -70,3 +70,14 @@ typedef struct{
   uint8_t t4_lo;
   uint8_t t4_hi;
 } BMSTemperatures_m;
+
+typedef struct{
+  uint8_t moduleID;
+  uint8_t faultCode;
+  uint8_t spare1;
+  uint8_t spare2;
+  uint8_t spare3;
+  uint8_t spare4;
+  uint8_t spare5;
+  uint8_t spare6;
+} TORCHFault_m;

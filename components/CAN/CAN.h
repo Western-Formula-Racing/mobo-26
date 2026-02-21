@@ -2,6 +2,8 @@
 #include "CANMessages.h"
 // CAN IDs
 enum canID{
+  //rx ids
+  id_tochFault = 1000,
   // TX ids
   id_packStatus = 1056,
   id_packInfo = 1057,
@@ -24,4 +26,5 @@ union CANBuffer_u{
   BMSCurrentLimit_m BMSCurrentLimit;
   BMSVoltages_m BMSVoltages;
   BMSTemperatures_m BMSTemperatures;
+  TORCHFault_m TORCHFault;
 };
