@@ -17,7 +17,7 @@ void stateTransition(){
       // check for precharge start
       if(inputStates[AIRN_RELAY] == 1 && inputStates[LATCH_RELAY] == 1 && inputStates[BSPD_RELAY] == 1 && inputStates[IMD_RELAY] == 1){
         moboState.currentState = PRECHARGE;
-        moboState.lastState = IDLE; 
+        moboState.lastState = IDLE;
         moboState.prechargeStartTime = pdTICKS_TO_MS(xTaskGetTickCount());
         ESP_LOGI(TAG, "IDLE -> PRECHARGE");
       }

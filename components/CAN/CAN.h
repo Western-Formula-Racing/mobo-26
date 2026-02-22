@@ -11,6 +11,12 @@ enum canID{
   id_ElconLimits = 403105268,
 };
 
+typedef struct {
+  uint32_t id;
+  uint8_t  dlc;
+  uint8_t  data[8];
+} CanRxItem;
+
 extern int bus_recovery_attempts;
 
 void initCAN();
