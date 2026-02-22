@@ -79,11 +79,6 @@ void canTask(void *arg)
         int module = rx_data.TORCHFault.moduleID;
         raiseTorchError(error, module);
       }
-      else if (item.id == 1000) {
-        uint8_t module_id = rx_data.array[0];
-        uint8_t err       = rx_data.array[1];
-        (void)module_id;
-      }
     }
     twai_node_get_info(mobo_node_handle,&canStatus,&canRecord);
     if(canStatus.state == TWAI_ERROR_BUS_OFF && bus_recovery_attempts < MAX_RECOVERY_ATTEMPTS){
