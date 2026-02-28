@@ -5,9 +5,12 @@
 #include "CAN.h"
 #include "statemachine.h"
 #include "BMS.h"
+#include "tempsense.h"
 
 static const char* TAG = "periodic";
 int periodicCount = 0;
+
+static int tempCount = 0;
 
 void printInfo(){
   // teleplot io
@@ -29,4 +32,25 @@ void periodicCallback(TimerHandle_t xTimer){
     printInfo();
     periodicCount = 0;
   }
+
+
+
+//Temp sense handling
+if (tempCount >=500 && tempStatus.tempFlag == false) { //5 sec bus downtime
+        measureTemp();
+        tempCount = 0;
+    }
+
+ if (tempCount>=75 && tempStatus.tempFlag == true)  { //periodic temp read
+    onewire_depower(GPIO_ONE_WIRE);
+
+    readTemp(); 
+    printf(">temp1:%f \n>temp1:%f \n>temp1:%f \n>temp1:%f \n>temp1:%f \n", tempStatus.temp[0], tempStatus.temp[1], tempStatus.temp[2], tempStatus.temp[3], tempStatus.temp[4]);
+    tempStatus.tempFlag = false;
+    tempCount = 0; 
+
+  }
+
+  tempCount++;
+
 }

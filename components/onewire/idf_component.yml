@@ -1,0 +1,30 @@
+dependencies:
+  esp-idf-lib/esp_idf_lib_helpers:
+    version: '*'
+description: Bit-banging 1-Wire driver
+discussion: https://github.com/esp-idf-lib/core/discussions
+documentation: https://esp-idf-lib.github.io/onewire/
+files:
+  exclude:
+  - docs/**/*
+issues: https://github.com/esp-idf-lib/onewire/issues
+license: MIT
+maintainers:
+- Ruslan V. Uss (@UncleRus) <unclerus@gmail.com>
+repository: git://github.com/esp-idf-lib/onewire.git
+repository_info:
+  commit_sha: 8fd0a6223b142154509a1931e710890ab1296230
+  path: .
+targets:
+- esp32
+- esp32c2
+- esp32c3
+- esp32c5
+- esp32c6
+- esp32c61
+- esp32h2
+- esp32p4
+- esp32s2
+- esp32s3
+url: https://github.com/esp-idf-lib/core
+version: 1.1.0
