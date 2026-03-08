@@ -24,4 +24,5 @@ union CANBuffer_u{
   BMSCurrentLimit_m BMSCurrentLimit;
   BMSVoltages_m BMSVoltages;
   BMSTemperatures_m BMSTemperatures;
+  M167_Voltage_Info_m M167_Voltage_Info;
 };

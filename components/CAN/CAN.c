@@ -10,6 +10,7 @@
 #include "io.h"
 #include "statemachine.h"
 #include "config.h"
+#include "Inverter.h"
 
 static const char* TAG = "CAN";
 
@@ -88,6 +89,9 @@ void canTask(void *arg)
         uint8_t module_id = rx_data.array[0];
         uint8_t err       = rx_data.array[1];
         (void)module_id;
+      }
+      else if(item.id == 167){
+        setInverterVoltage(rx_data.M167_Voltage_Info.INV_DC_Bus_Voltage);
       }
     }
     twai_node_get_info(mobo_node_handle,&canStatus,&canRecord);

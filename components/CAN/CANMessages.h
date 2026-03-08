@@ -70,3 +70,10 @@ typedef struct{
   uint8_t t4_lo;
   uint8_t t4_hi;
 } BMSTemperatures_m;
+
+typedef struct{
+  int16_t INV_DC_Bus_Voltage;
+  int16_t INV_Output_Voltage;
+  int16_t INV_VAB_Vd_Voltage;
+  int16_t INV_VBC_Vq_Voltage;
+} M167_Voltage_Info_m;

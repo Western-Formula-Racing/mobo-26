@@ -4,10 +4,12 @@
 #include "config.h"
 #include "BMS.h"
 #include "CAN.h"
+#include "Inverter.h"
 
 state_t moboState;
 static const char* TAG = "statemachine";
-
+bool useInverterVoltage = true;
+float HV_Voltage = 0;
 
 void stateTransition(){
   
@@ -32,7 +34,13 @@ void stateTransition(){
         break;
       }
       // check if precharge success
-      if( Vsense_VtoV(analogVoltages[ANALOG_VSENSE]) > (PRECHARGE_RATIO * getPackVoltage()) && (pdTICKS_TO_MS(xTaskGetTickCount()) - moboState.prechargeStartTime) > PRECHARGE_MINDELAY){
+
+
+      HV_Voltage = Vsense_VtoV(analogVoltages[ANALOG_VSENSE]);
+      if(useInverterVoltage){
+        HV_Voltage = getInverterVoltage();
+      }
+      if( HV_Voltage > (PRECHARGE_RATIO * getPackVoltage()) && (pdTICKS_TO_MS(xTaskGetTickCount()) - moboState.prechargeStartTime) > PRECHARGE_MINDELAY){
         moboState.currentState = HV_ACTIVE;
         moboState.lastState = PRECHARGE;
         outputStates[OUTPUTS_PRECH_OK] = 1;
