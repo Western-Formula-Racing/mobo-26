@@ -8,6 +8,6 @@ void setInverterVoltage(int voltage_x10){
     inverterVoltage = voltage_x10/10.0f;
 }
 
-float getInveterVoltage(){
+float getInverterVoltage(){
     return inverterVoltage;
 }
