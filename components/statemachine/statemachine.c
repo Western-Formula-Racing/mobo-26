@@ -61,6 +61,11 @@ void stateTransition(){
       break;
     case CHARGE_COMPLETE:
       break;
+    case PLACEHOLDER:
+      moboState.currentState = FAULT;
+      moboState.lastState = PLACEHOLDER;
+      ESP_LOGI(TAG, "idk how tf you got here");
+      break;
     case FAULT:
       ESP_LOGE(TAG,"FAULT: %d", moboState.error);
       outputStates[OUTPUTS_RED_LED] = 1;

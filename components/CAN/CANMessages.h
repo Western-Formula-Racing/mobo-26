@@ -31,13 +31,25 @@ typedef struct{
   uint8_t AMS : 1;
   uint8_t BSPD : 1;
   uint8_t Latch : 1;
-  uint8_t AirN: 1;
   uint8_t HVActive : 3;
   uint8_t SOC_lo;
   uint8_t SOC_hi;
   uint8_t packStatus;
   uint8_t fault;
 } packStatus_m;
+
+// typedef struct{
+//   uint16_t packCurrent16;
+//   uint8_t IMD : 1;
+//   uint8_t AMS : 1;
+//   uint8_t BSPD : 1;
+//   uint8_t Latch : 1;
+//   uint8_t AirN: 1;
+//   uint8_t HVActive : 3;
+//   uint16_t SOC;
+//   uint8_t packStatus;
+//   uint8_t fault;
+// } packStatus_m;
 
 typedef struct{
   uint8_t BMSCurrentLimit_lo;

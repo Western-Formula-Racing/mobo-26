@@ -1,6 +1,6 @@
 #define PRECHARGE_TIMEOUT 5000    // milliseconds
 #define PRECHARGE_RATIO   0.9    // % of pack voltage to complete precharge at
-#define CHARGE_TARGET     390     // voltage to stop charging at
+#define CHARGE_TARGET     410     // voltage to stop charging at
 #define CHARGE_CURRENT    5
 #define DO_BUS_RECOVERY   true
 #define MAX_RECOVERY_ATTEMPTS 10
