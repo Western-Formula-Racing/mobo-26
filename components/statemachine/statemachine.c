@@ -36,6 +36,16 @@ void stateTransition(){
       // check if precharge success
 
 
+#ifdef VIRTUAL_ENV
+      // In virtual mode there is no physical Vsense/inverter ADC — auto-complete
+      // precharge after PRECHARGE_MINDELAY so the ECU can reach DRIVE state.
+      if((pdTICKS_TO_MS(xTaskGetTickCount()) - moboState.prechargeStartTime) > PRECHARGE_MINDELAY){
+        moboState.currentState = HV_ACTIVE;
+        moboState.lastState = PRECHARGE;
+        outputStates[OUTPUTS_PRECH_OK] = 1;
+        ESP_LOGI(TAG, "PRECHARGE -> HV_ACTIVE (virtual)");
+      }
+#else
       HV_Voltage = Vsense_VtoV(analogVoltages[ANALOG_VSENSE]);
       if(useInverterVoltage){
         HV_Voltage = getInverterVoltage();
@@ -46,6 +56,7 @@ void stateTransition(){
         outputStates[OUTPUTS_PRECH_OK] = 1;
         ESP_LOGI(TAG, "PRECHARGE -> HV_ACTIVE");
       }
+#endif
       break;
     case HV_ACTIVE:
       // if charge switch toggled, switch to charging mode

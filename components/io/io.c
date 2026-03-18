@@ -13,6 +13,12 @@ float   analogVoltages[ANALOG_COUNT] = {};
 uint8_t outputStates[OUTPUTS_COUNT] = {};
 spi_device_handle_t adcHandle;
 
+#ifdef VIRTUAL_ENV
+bool virtual_bspd_ok = true;
+bool virtual_imd_ok  = true;
+bool virtual_ams_ok  = true;
+#endif
+
 static const char* TAG = "io"; 
 
 // ADC filtering config
@@ -62,7 +68,8 @@ void initIO(){
     .tx_buffer = txWrite,
     .rx_buffer = NULL
   };
-  spi_device_transmit(adcHandle, &t_write);
+  //spi_device_transmit(adcHandle, &t_write);
+  ESP_LOGI(TAG, "SPI write bypassed for QEMU");
 }
 
 // update digital inputs
@@ -75,13 +82,22 @@ void digitalInputs(){
     }
   }
   // update first element
+#ifdef VIRTUAL_ENV
+  inputBuffers[IMD_RELAY][0]   = virtual_imd_ok  ? 1 : 0;
+  inputBuffers[BSPD_RELAY][0]  = virtual_bspd_ok ? 1 : 0;
+  inputBuffers[LATCH_RELAY][0] = 1;
+  inputBuffers[AIRN_RELAY][0]  = 1;
+  inputBuffers[AIRP_RELAY][0]  = 1;
+  inputBuffers[CHARGE_EN][0]   = 0;
+#else
   inputBuffers[IMD_RELAY][0]   = gpio_get_level(GPIO_IMD);
   inputBuffers[BSPD_RELAY][0]  = gpio_get_level(GPIO_BSPD);
   inputBuffers[LATCH_RELAY][0] = gpio_get_level(GPIO_LATCH);
   inputBuffers[AIRN_RELAY][0]  = gpio_get_level(GPIO_AIRN);
   //printf(">AIRN0:%d \n>AIRN1:%d \n>AIRN2:%d \n>AIRN3:%d \n>AIRN4:%d",inputBuffers[AIRN_RELAY][0],inputBuffers[AIRN_RELAY][1],inputBuffers[AIRN_RELAY][2],inputBuffers[AIRN_RELAY][3],inputBuffers[AIRN_RELAY][4]);
   inputBuffers[AIRP_RELAY][0]  = gpio_get_level(GPIO_AIRP);
-  inputBuffers[CHARGE_EN][0]  = gpio_get_level(GPIO_CHARGE_EN);
+  inputBuffers[CHARGE_EN][0]   = gpio_get_level(GPIO_CHARGE_EN);
+#endif
 
   // update relay status based on buffer content
   for(int i = 0; i < INPUTS_COUNT; i++){
@@ -109,7 +125,8 @@ void analogInputs(){
     .tx_buffer = txDummy,
     .rx_buffer = rxData     // Response comes in first 2 bytes
   };
-  spi_device_transmit(adcHandle, &t_receive);
+  //spi_device_transmit(adcHandle, &t_receive);
+  // ESP_LOGI(TAG, "SPI read bypassed for QEMU");
 
   // Parse 14-bit raw ADC values (two channels per transfer)
   uint16_t rawValue1 = ((rxData[0] & 0xFF) << 8) | rxData[1]; // 14-bit value from first 2 bytes

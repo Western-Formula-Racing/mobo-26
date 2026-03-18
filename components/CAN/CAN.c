@@ -89,10 +89,20 @@ void canTask(void *arg)
         uint8_t module_id = rx_data.array[0];
         uint8_t err       = rx_data.array[1];
         (void)module_id;
+        moboState.currentState = FAULT;
+        moboState.error = (enum error_e)err;
+        ESP_LOGE(TAG, "Received BMS Fault from Module %d: Error %d", module_id, err);
       }
       else if(item.id == 167){
         setInverterVoltage(rx_data.M167_Voltage_Info.INV_DC_Bus_Voltage);
       }
+#ifdef VIRTUAL_ENV
+      else if (item.id == 0x600) {
+        virtual_bspd_ok = (item.data[0] & (1 << 4)) > 0;
+        virtual_imd_ok  = (item.data[0] & (1 << 5)) > 0;
+        virtual_ams_ok  = (item.data[0] & (1 << 6)) > 0;
+      }
+#endif
     }
     twai_node_get_info(mobo_node_handle,&canStatus,&canRecord);
     if(canStatus.state == TWAI_ERROR_BUS_OFF && bus_recovery_attempts < MAX_RECOVERY_ATTEMPTS){
@@ -191,6 +201,32 @@ void canTxPeriodic(){
 
   // send every 100ms
   if(txCounter%10 == 0){
+    // PackStatus (ID 1056) - only PackStatus + Fault set
+  txMessage.header.id  = id_packStatus;   // 1056 (0x420)
+  txMessage.header.ide = false;           // standard 11-bit
+  txMessage.header.rtr = false;
+  txMessage.header.dlc = 8;
+
+  memset(canTxBuffer.array, 0, 8);
+
+  //IMD status in bit 0 of byte 2
+  uint8_t imd = outputStates[OUTPUTS_BMS_OK] & 0x1;
+  canTxBuffer.array[2] |= (imd << 0);
+
+  //AMS status in bit 1 of byte 2
+  uint8_t ams = outputStates[OUTPUTS_BMS_OK] & 0x1;
+  canTxBuffer.array[2] |= (ams << 1);
+
+  // Use your enums directly (full bytes in DBC)
+  canTxBuffer.array[5] = (uint8_t)moboState.currentState; // PackStatus
+  canTxBuffer.array[6] = (uint8_t)moboState.error;        // Fault
+
+  txMessage.buffer = canTxBuffer.array;
+
+  esp_err_t err = twai_node_transmit(mobo_node_handle, &txMessage, pdMS_TO_TICKS(10));
+  if (err != ESP_OK) {
+    printf("PackStatus TX failed: %d\n", (int)err);
+  }
     //packinfo
     txMessage.header.id = id_packInfo;
     int minTemp = f2i_CAN(getMinTemp(),10,0);

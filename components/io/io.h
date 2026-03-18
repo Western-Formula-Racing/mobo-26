@@ -34,6 +34,12 @@ extern uint8_t inputStates[INPUTS_COUNT];
 extern uint8_t outputStates[OUTPUTS_COUNT];
 extern float   analogVoltages[ANALOG_COUNT];
 
+#ifdef VIRTUAL_ENV
+extern bool virtual_bspd_ok;
+extern bool virtual_imd_ok;
+extern bool virtual_ams_ok;
+#endif
+
 void initIO();
 void ioPeriodic();
 esp_err_t enablePrecharge();
