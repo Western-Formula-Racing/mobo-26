@@ -183,36 +183,36 @@ twai_frame_t txMessage = {
 // Periodic function for transmission of CAN messages
 void canTxPeriodic(){
 
-  // send every 10ms
+    // send every 10ms
 
-  // send every 100ms
+    // send every 100ms
   if(txCounter%10 == 0){
-    // PackStatus (ID 1056) - only PackStatus + Fault set
-  txMessage.header.id  = id_packStatus;   // 1056 (0x420)
-  txMessage.header.ide = false;           // standard 11-bit
-  txMessage.header.rtr = false;
-  txMessage.header.dlc = 8;
+      // PackStatus (ID 1056) - only PackStatus + Fault set
+    txMessage.header.id  = id_packStatus;   // 1056 (0x420)
+    txMessage.header.ide = false;           // standard 11-bit
+    txMessage.header.rtr = false;
+    txMessage.header.dlc = 8;
 
-  memset(canTxBuffer.array, 0, 8);
+    memset(canTxBuffer.array, 0, 8);
 
-  //IMD status in bit 0 of byte 2
-  uint8_t imd = inputStates[IMD_RELAY] & 0x1;
-  canTxBuffer.array[2] |= (imd << 0);
+    //IMD status in bit 0 of byte 2
+    uint8_t imd = inputStates[IMD_RELAY] & 0x1;
+    canTxBuffer.array[2] |= (imd << 0);
 
-  //AMS status in bit 1 of byte 2
-  uint8_t ams = gpio_get_level(GPIO_BMS_OK) & 0x1;
-  canTxBuffer.array[2] |= (ams << 1);
+    //AMS status in bit 1 of byte 2
+    uint8_t ams = gpio_get_level(GPIO_BMS_OK) & 0x1;
+    canTxBuffer.array[2] |= (ams << 1);
 
-  // Use your enums directly (full bytes in DBC)
-  canTxBuffer.array[5] = (uint8_t)moboState.currentState; // PackStatus
-  canTxBuffer.array[6] = (uint8_t)moboState.error;        // Fault
+    // Use your enums directly (full bytes in DBC)
+    canTxBuffer.array[5] = (uint8_t)moboState.currentState; // PackStatus
+    canTxBuffer.array[6] = (uint8_t)moboState.error;        // Fault
 
-  txMessage.buffer = canTxBuffer.array;
+    txMessage.buffer = canTxBuffer.array;
 
-  esp_err_t err = twai_node_transmit(mobo_node_handle, &txMessage, pdMS_TO_TICKS(10));
-  if (err != ESP_OK) {
-    printf("PackStatus TX failed: %d\n", (int)err);
-  }
+    esp_err_t err = twai_node_transmit(mobo_node_handle, &txMessage, pdMS_TO_TICKS(10));
+    if (err != ESP_OK) {
+      printf("PackStatus TX failed: %d\n", (int)err);
+    }
     // //packinfo
     txMessage.header.id = id_packInfo;
     int minTemp = f2i_CAN(getMinTemp(),10,0);
@@ -267,13 +267,20 @@ void canTxPeriodic(){
     //charging message
     txMessage.header.ide = true;
     txMessage.header.id = id_ElconLimits;
+    txMessage.header.rtr = false;
+    txMessage.header.dlc = 8;
     canTxBuffer.elconLimits.maxChargeCurrent_lo = (CHARGE_TARGET * 10) & 0xFF;
     canTxBuffer.elconLimits.maxChargeCurrent_hi = ((CHARGE_TARGET * 10) & 0xFF00)>>8;
     canTxBuffer.elconLimits.maxChargeCurrent_lo = (CHARGE_CURRENT * 10) & 0xFF;
     canTxBuffer.elconLimits.maxChargeCurrent_hi = ((CHARGE_CURRENT * 10) & 0xFF00)>>8;
     canTxBuffer.elconLimits.control = moboState.currentState == CHARGING ? 0 : 1;
     txMessage.buffer = canTxBuffer.array;
-    twai_node_transmit(mobo_node_handle, &txMessage,0);
+    esp_err_t err = twai_node_transmit(mobo_node_handle, &txMessage, 0);
+    if (err != ESP_OK) {
+      ESP_LOGE(TAG, "ELCON TX failed: %d", (int)err);
+    } else {
+      ESP_LOGI(TAG, "ELCON TX success");
+    }
     txMessage.header.ide = false;
     txCounter = 0;
   }

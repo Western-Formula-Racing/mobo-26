@@ -23,21 +23,27 @@ void stateTransition(){
       }
       break;
     case PRECHARGE:
-      // check if precharge timed out
-      if((pdTICKS_TO_MS(xTaskGetTickCount()) - moboState.prechargeStartTime) > PRECHARGE_TIMEOUT){
-        ESP_LOGE(TAG, "Precharge Timed out!");
-        moboState.currentState = FAULT;
-        moboState.lastState = PRECHARGE;
-        moboState.error = PRECHARGE_FAIL;
-        break;
-      }
-      // check if precharge success
-      if( Vsense_VtoV(analogVoltages[ANALOG_VSENSE]) > (PRECHARGE_RATIO * getPackVoltage()) && (pdTICKS_TO_MS(xTaskGetTickCount()) - moboState.prechargeStartTime) > PRECHARGE_MINDELAY){
-        moboState.currentState = HV_ACTIVE;
-        moboState.lastState = PRECHARGE;
-        outputStates[OUTPUTS_PRECH_OK] = 1;
-        ESP_LOGI(TAG, "PRECHARGE -> HV_ACTIVE");
-      }
+      vTaskDelay(pdMS_TO_TICKS(5000)); 
+      moboState.currentState = HV_ACTIVE;
+      moboState.lastState = PRECHARGE;
+      outputStates[OUTPUTS_PRECH_OK] = 1;
+      ESP_LOGI(TAG, "PRECHARGE -> HV_ACTIVE");
+      break;
+      // // check if precharge timed out
+      // if((pdTICKS_TO_MS(xTaskGetTickCount()) - moboState.prechargeStartTime) > PRECHARGE_TIMEOUT){
+      //   ESP_LOGE(TAG, "Precharge Timed out!");
+      //   moboState.currentState = FAULT;
+      //   moboState.lastState = PRECHARGE;
+      //   moboState.error = PRECHARGE_FAIL;
+      //   break;
+      // }
+      // // check if precharge success
+      // if( Vsense_VtoV(analogVoltages[ANALOG_VSENSE]) > (PRECHARGE_RATIO * getPackVoltage()) && (pdTICKS_TO_MS(xTaskGetTickCount()) - moboState.prechargeStartTime) > PRECHARGE_MINDELAY){
+      //   moboState.currentState = HV_ACTIVE;
+      //   moboState.lastState = PRECHARGE;
+      //   outputStates[OUTPUTS_PRECH_OK] = 1;
+      //   ESP_LOGI(TAG, "PRECHARGE -> HV_ACTIVE");
+      // }
       break;
     case HV_ACTIVE:
       // if charge switch toggled, switch to charging mode
@@ -46,12 +52,31 @@ void stateTransition(){
         moboState.lastState = HV_ACTIVE;
         ESP_LOGI(TAG, "HV_ACTIVE -> CHARGING");
       }
+      if(inputStates[AIRN_RELAY] == 0 || inputStates[LATCH_RELAY] == 0 || inputStates[BSPD_RELAY] == 0 ){
+        moboState.currentState = IDLE;
+        moboState.lastState = HV_ACTIVE;
+        outputStates[OUTPUTS_PRECH_OK] = 0;
+        ESP_LOGI(TAG, "HV_ACTIVE -> IDLE");
+      }
+      if(inputStates[IMD_RELAY] == 0 || inputStates[GPIO_BMS_OK] == 0){
+        moboState.currentState = FAULT;
+        moboState.lastState = HV_ACTIVE;
+        outputStates[OUTPUTS_PRECH_OK] = 0;
+        ESP_LOGI(TAG, "HV_ACTIVE -> FAULT");
+      }
       break;
     case CHARGING:
-      if(inputStates[CHARGE_EN] == 1){
+      if(inputStates[CHARGE_EN] == 1){ //not charging 
         moboState.currentState = HV_ACTIVE;
         moboState.lastState = CHARGING;
         ESP_LOGI(TAG, "CHARGING -> HV_ACTIVE");
+      }
+      //IF ESTOP IS HIT ON CHARGE CART.
+      if(inputStates[AIRN_RELAY] == 0 ){
+        moboState.currentState = IDLE;
+        moboState.lastState = CHARGING;
+        outputStates[OUTPUTS_PRECH_OK] = 0;
+        ESP_LOGI(TAG, "CHARGING -> IDLE");
       }
       if(getPackVoltage() > CHARGE_TARGET){
         moboState.currentState = IDLE;

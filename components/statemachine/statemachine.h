@@ -2,13 +2,13 @@
 #include "freertos/FreeRTOS.h"
 
 enum state_e {
-  IDLE,             // LV on 
-  PRECHARGE,        // check for precharge complete
-  PLACEHOLDER,
-  HV_ACTIVE,        // HV Active, precharge complete
-  CHARGING,         // On chargecart and charging
-  CHARGE_COMPLETE,  // Charging complete, "limp" mode
-  FAULT             // AMS Fault raised
+  IDLE,             // LV on 0
+  PLACEHOLDER,    
+  PRECHARGE,
+  HV_ACTIVE,        // HV Active, precharge complete 3
+  CHARGING,         // On chargecart and charging 4 
+  CHARGE_COMPLETE,  // Charging complete, "limp" mode 5
+  FAULT             // AMS Fault raised 6
 };
 
 enum error_e {
