@@ -41,14 +41,14 @@ void stateTransition(){
       break;
     case HV_ACTIVE:
       // if charge switch toggled, switch to charging mode
-      if(inputStates[CHARGE_EN] == 1){
+      if(inputStates[CHARGE_EN] == 0){
         moboState.currentState = CHARGING;
         moboState.lastState = HV_ACTIVE;
         ESP_LOGI(TAG, "HV_ACTIVE -> CHARGING");
       }
       break;
     case CHARGING:
-      if(inputStates[CHARGE_EN] == 0){
+      if(inputStates[CHARGE_EN] == 1){
         moboState.currentState = HV_ACTIVE;
         moboState.lastState = CHARGING;
         ESP_LOGI(TAG, "CHARGING -> HV_ACTIVE");
