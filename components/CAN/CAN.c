@@ -269,8 +269,8 @@ void canTxPeriodic(){
     txMessage.header.id = id_ElconLimits;
     txMessage.header.rtr = false;
     txMessage.header.dlc = 8;
-    canTxBuffer.elconLimits.maxChargeCurrent_lo = (CHARGE_TARGET * 10) & 0xFF;
-    canTxBuffer.elconLimits.maxChargeCurrent_hi = ((CHARGE_TARGET * 10) & 0xFF00)>>8;
+    canTxBuffer.elconLimits.maxChargeVoltage_lo = (CHARGE_TARGET * 10) & 0xFF;
+    canTxBuffer.elconLimits.maxChargeVoltage_hi = ((CHARGE_TARGET * 10) & 0xFF00)>>8;
     canTxBuffer.elconLimits.maxChargeCurrent_lo = (CHARGE_CURRENT * 10) & 0xFF;
     canTxBuffer.elconLimits.maxChargeCurrent_hi = ((CHARGE_CURRENT * 10) & 0xFF00)>>8;
     canTxBuffer.elconLimits.control = moboState.currentState == CHARGING ? 0 : 1;
