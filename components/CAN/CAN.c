@@ -178,10 +178,45 @@ void initCAN(){
 int txCounter = 0;
 union CANBuffer_u canTxBuffer = {.data=0};
 
-twai_frame_t txMessage = {
-  .header.id = 0x0,            // Message ID
-  .header.ide = false,          // Use 29-bit extended ID format
-  .buffer_len = 8,             // Length of data to transmit
+uint8_t packStatusData[8];
+uint8_t packInfoData[8];
+uint8_t bmsCurrentLimitData[8];
+uint8_t elconLimitsData[8];
+
+twai_frame_t packStatusMsg = {
+  .header.id = id_packStatus,
+  .header.ide = false,
+  .header.rtr = false,
+  .header.dlc = 8,
+  .buffer_len = 8,
+  .buffer = packStatusData,
+};
+
+twai_frame_t packInfoMsg = {
+  .header.id = id_packInfo,
+  .header.ide = false,
+  .header.rtr = false,
+  .header.dlc = 8,
+  .buffer_len = 8,
+  .buffer = packInfoData,
+};
+
+twai_frame_t bmsCurrentLimitMsg = {
+  .header.id = id_BMSCurrentLimit,
+  .header.ide = false,
+  .header.rtr = false,
+  .header.dlc = 8,
+  .buffer_len = 8,
+  .buffer = bmsCurrentLimitData,
+};
+
+twai_frame_t elconLimitsMsg = {
+  .header.id = id_ElconLimits,
+  .header.ide = true,
+  .header.rtr = false,
+  .header.dlc = 8,
+  .buffer_len = 8,
+  .buffer = elconLimitsData,
 };
 
 // Periodic function for transmission of CAN messages
@@ -192,11 +227,6 @@ void canTxPeriodic(){
   // send every 100ms
   if(txCounter%10 == 0){
     // PackStatus (ID 1056) - only PackStatus + Fault set
-    txMessage.header.id  = id_packStatus;   // 1056 (0x420)
-    txMessage.header.ide = false;           // standard 11-bit
-    txMessage.header.rtr = false;
-    txMessage.header.dlc = 8;
-
     memset(canTxBuffer.array, 0, 8); //reset buffer
     //TODO: fix current sensor
     //int packCurrent = Cursense_VtoA(analogVoltages[ANALOG_CURSENSE]);
@@ -213,17 +243,16 @@ void canTxPeriodic(){
     canTxBuffer.packStatus.SOC_hi = 0;
     canTxBuffer.packStatus.packStatus = moboState.currentState;
     canTxBuffer.packStatus.fault = moboState.error;
-    txMessage.buffer = canTxBuffer.array;
-    twai_node_transmit(mobo_node_handle, &txMessage, 0);
+    memcpy(packStatusMsg.buffer, canTxBuffer.array, 8);
+    twai_node_transmit(mobo_node_handle, &packStatusMsg, 0);
 
-    txMessage.buffer = canTxBuffer.array;
+    memcpy(packStatusMsg.buffer, canTxBuffer.array, 8);
 
-    esp_err_t err = twai_node_transmit(mobo_node_handle, &txMessage, pdMS_TO_TICKS(10));
+    esp_err_t err = twai_node_transmit(mobo_node_handle, &packStatusMsg, pdMS_TO_TICKS(10));
     if (err != ESP_OK) {
       ESP_LOGE(TAG, "PackStatus TX failed: %d\n", (int)err);
     }
     // Packinfo
-    txMessage.header.id = id_packInfo;
     int minTemp = f2i_CAN(getMinTemp(),10,0);
     int maxTemp = f2i_CAN(getMaxTemp(),10,0);
     int minVoltage = f2i_CAN(getMinVoltage(),1000,0);
@@ -236,41 +265,35 @@ void canTxPeriodic(){
     canTxBuffer.packInfo.minVoltage_hi = (minVoltage & 0xFF00)>>8;
     canTxBuffer.packInfo.maxVoltage_lo = (maxVoltage & 0xFF);
     canTxBuffer.packInfo.maxVoltage_hi = (maxVoltage & 0xFF00)>>8;
-    txMessage.buffer = canTxBuffer.array;
+    memcpy(packInfoMsg.buffer, canTxBuffer.array, 8);
     
-    err = twai_node_transmit(mobo_node_handle, &txMessage,0);
+    err = twai_node_transmit(mobo_node_handle, &packInfoMsg,0);
     if (err != ESP_OK) {
       ESP_LOGE(TAG, "PackInfo TX failed: %d\n", (int)err);
     }
 
     // //BMS Current limit to Cascadia Inverter
-    txMessage.header.id = id_BMSCurrentLimit;
     canTxBuffer.BMSCurrentLimit.BMSChargeCurrent_lo = 10;
     canTxBuffer.BMSCurrentLimit.BMSChargeCurrent_hi = 0;
     canTxBuffer.BMSCurrentLimit.BMSCurrentLimit_lo = 255;
     canTxBuffer.BMSCurrentLimit.BMSCurrentLimit_hi = 0;
-    txMessage.buffer = canTxBuffer.array;
-    twai_node_transmit(mobo_node_handle, &txMessage,0);
+    memcpy(bmsCurrentLimitMsg.buffer, canTxBuffer.array, 8);
+    twai_node_transmit(mobo_node_handle, &bmsCurrentLimitMsg,0);
   }
 
   // send every 1s
   if(txCounter>=100){
     //charging message
-    txMessage.header.ide = true;
-    txMessage.header.id = id_ElconLimits;
-    txMessage.header.rtr = false;
-    txMessage.header.dlc = 8;
     canTxBuffer.elconLimits.maxChargeVoltage_lo = ((CHARGE_TARGET * 10) & 0xFF00)>>8;
     canTxBuffer.elconLimits.maxChargeVoltage_hi = (CHARGE_TARGET * 10) & 0xFF;
     canTxBuffer.elconLimits.maxChargeCurrent_lo = ((CHARGE_CURRENT * 10) & 0xFF00)>>8;
     canTxBuffer.elconLimits.maxChargeCurrent_hi = (CHARGE_CURRENT * 10) & 0xFF;
     canTxBuffer.elconLimits.control = moboState.currentState == CHARGING ? 0 : 1;
-    txMessage.buffer = canTxBuffer.array;
-    esp_err_t err = twai_node_transmit(mobo_node_handle, &txMessage, 0);
+    memcpy(elconLimitsMsg.buffer, canTxBuffer.array, 8);
+    esp_err_t err = twai_node_transmit(mobo_node_handle, &elconLimitsMsg, 0);
     if (err != ESP_OK) {
       ESP_LOGE(TAG, "ELCON TX failed: %d", (int)err);
     }
-    txMessage.header.ide = false;
     txCounter = 0;
   }
   txCounter++;

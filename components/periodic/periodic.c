@@ -15,7 +15,7 @@ void printInfo(){
   if(moboState.currentState == FAULT){
     printFault();
   }else{
-    printModules();
+    //printModules();
   }
   printf(">IMD:%d|np \n>BSPD:%d|np \n>LATCH:%d|np \n>AIRN:%d|np \n>AIRP:%d|np \n>CHARGE_EN:%d|np \n>BMS_OK:%d|np \n>PRECH_OK:%d|np \n>RED_LED:%d|np \n>GREEN_LED:%d|np \n",inputStates[IMD_RELAY],inputStates[BSPD_RELAY],inputStates[LATCH_RELAY],inputStates[AIRN_RELAY],inputStates[AIRP_RELAY],inputStates[CHARGE_EN],outputStates[OUTPUTS_BMS_OK],outputStates[OUTPUTS_PRECH_OK],outputStates[OUTPUTS_RED_LED],outputStates[OUTPUTS_GREEN_LED]);
   printf(">precharge_voltage: %.2f\n",Vsense_VtoV(analogVoltages[ANALOG_VSENSE]));
@@ -29,6 +29,7 @@ void printInfo(){
   //ESP_LOGI(TAG,"> Digital Inputs: IMD: %d | BSPD: %d | LATCH: %d | AIRN: %d | AIRP: %d | CHARGE_EN %d",inputStates[IMD_RELAY],inputStates[BSPD_RELAY],inputStates[LATCH_RELAY],inputStates[AIRN_RELAY],inputStates[AIRP_RELAY],inputStates[CHARGE_EN]);
   //ESP_LOGI(TAG,"> Digital Outputs: BMS_OK: %d | PRECH_OK: %d | RED_LED: %d | GREEN_LED: %d",outputStates[OUTPUTS_BMS_OK],outputStates[OUTPUTS_PRECH_OK],outputStates[OUTPUTS_RED_LED],outputStates[OUTPUTS_GREEN_LED]);
   printf(">m1_timeout:%d \n>m2_timeout:%d \n>m3_timeout:%d \n>m4_timeout:%d \n>m5_timeout:%d \n",modules[0].timeout,modules[1].timeout,modules[2].timeout,modules[3].timeout,modules[4].timeout);
+  printCANInfo();
 }
 
 // main periodic callback function
