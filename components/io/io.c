@@ -33,6 +33,12 @@ void initIO(){
   
   gpio_config(&io_cfg); // config inputs
   
+  // Configure GPIO_CHARGE_EN (GPIO 42) as input with no internal pull resistors (externally pulled up)
+  io_cfg.pin_bit_mask = (1ULL << GPIO_CHARGE_EN);
+  io_cfg.pull_down_en = false;
+  io_cfg.pull_up_en = false;
+  gpio_config(&io_cfg);
+  
   io_cfg.mode = GPIO_MODE_OUTPUT;               // set mode to output
   io_cfg.pin_bit_mask = GPIO_OUTPUT_PIN_SELECT; // output pin mask
   

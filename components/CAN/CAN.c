@@ -177,11 +177,37 @@ twai_frame_t txMessage = {
 // Periodic function for transmission of CAN messages
 void canTxPeriodic(){
 
-  // send every 10ms
+    // send every 10ms
 
-  // send every 100ms
+    // send every 100ms
   if(txCounter%10 == 0){
-    //packinfo
+      // PackStatus (ID 1056) - only PackStatus + Fault set
+    txMessage.header.id  = id_packStatus;   // 1056 (0x420)
+    txMessage.header.ide = false;           // standard 11-bit
+    txMessage.header.rtr = false;
+    txMessage.header.dlc = 8;
+
+    memset(canTxBuffer.array, 0, 8);
+
+    //IMD status in bit 0 of byte 2
+    uint8_t imd = inputStates[IMD_RELAY] & 0x1;
+    canTxBuffer.array[2] |= (imd << 0);
+
+    //AMS status in bit 1 of byte 2
+    uint8_t ams = gpio_get_level(GPIO_BMS_OK) & 0x1;
+    canTxBuffer.array[2] |= (ams << 1);
+
+    // Use your enums directly (full bytes in DBC)
+    canTxBuffer.array[5] = (uint8_t)moboState.currentState; // PackStatus
+    canTxBuffer.array[6] = (uint8_t)moboState.error;        // Fault
+
+    txMessage.buffer = canTxBuffer.array;
+
+    esp_err_t err = twai_node_transmit(mobo_node_handle, &txMessage, pdMS_TO_TICKS(10));
+    if (err != ESP_OK) {
+      printf("PackStatus TX failed: %d\n", (int)err);
+    }
+    // //packinfo
     txMessage.header.id = id_packInfo;
     int minTemp = f2i_CAN(getMinTemp(),10,0);
     int maxTemp = f2i_CAN(getMaxTemp(),10,0);
@@ -196,30 +222,37 @@ void canTxPeriodic(){
     canTxBuffer.packInfo.maxVoltage_lo = (maxVoltage & 0xFF);
     canTxBuffer.packInfo.maxVoltage_hi = (maxVoltage & 0xFF00)>>8;
     txMessage.buffer = canTxBuffer.array;
-    twai_node_transmit(mobo_node_handle, &txMessage,0);
-    //packStatus
-    txMessage.header.id = id_packStatus;
-    int packCurrent = Cursense_VtoA(analogVoltages[ANALOG_CURSENSE]);
-    canTxBuffer.packStatus.packCurrent_lo = packCurrent & 0xFF;
-    canTxBuffer.packStatus.packCurrent_hi = (packCurrent & 0xFF00)>>8;
-    canTxBuffer.packStatus.IMD = inputStates[IMD_RELAY] & 0x1;
-    canTxBuffer.packStatus.AMS = gpio_get_level(GPIO_BMS_OK) & 0x1;
-    canTxBuffer.packStatus.BSPD = inputStates[BSPD_RELAY] & 0x1;
-    canTxBuffer.packStatus.Latch = inputStates[LATCH_RELAY] & 0x1;
-    canTxBuffer.packStatus.AirN = inputStates[AIRN_RELAY] & 0x1;
-    canTxBuffer.packStatus.HVActive = inputStates[HV_ACTIVE] & 0x1;
-    //TODO: rough SOC approx
-    canTxBuffer.packStatus.SOC_lo = 0;
-    canTxBuffer.packStatus.SOC_hi = 0;
-    canTxBuffer.packStatus.packStatus = moboState.currentState;
-    canTxBuffer.packStatus.fault = moboState.error;
-    twai_node_transmit(mobo_node_handle, &txMessage, 0);
-    //BMS Current limit to Cascadia Inverter
+    
+    err = twai_node_transmit(mobo_node_handle, &txMessage,0);
+    if (err != ESP_OK) {
+      printf("PackInfo TX failed: %d\n", (int)err);
+    }
+    // //packStatus
+    // txMessage.header.id = 1056;
+    // int packCurrent = Cursense_VtoA(analogVoltages[ANALOG_CURSENSE]);
+    // canTxBuffer.packStatus.packCurrent_lo = packCurrent & 0xFF;
+    // canTxBuffer.packStatus.packCurrent_hi = (packCurrent & 0xFF00)>>8;
+    // canTxBuffer.packStatus.IMD = inputStates[IMD_RELAY] & 0x1;
+    // canTxBuffer.packStatus.AMS = gpio_get_level(GPIO_BMS_OK) & 0x1;
+    // canTxBuffer.packStatus.BSPD = inputStates[BSPD_RELAY] & 0x1;
+    // canTxBuffer.packStatus.Latch = inputStates[LATCH_RELAY] & 0x1;
+    // canTxBuffer.packStatus.HVActive = inputStates[HV_ACTIVE] & 0x1;
+    // //TODO: rough SOC approx
+    // canTxBuffer.packStatus.SOC_lo = 0;
+    // canTxBuffer.packStatus.SOC_hi = 0;
+    // canTxBuffer.packStatus.packStatus = moboState.currentState;
+    // canTxBuffer.packStatus.fault = moboState.error;
+    // txMessage.buffer = canTxBuffer.array;
+    // twai_node_transmit(mobo_node_handle, &txMessage, 0);
+
+
+    // //BMS Current limit to Cascadia Inverter
     txMessage.header.id = id_BMSCurrentLimit;
     canTxBuffer.BMSCurrentLimit.BMSChargeCurrent_lo = 10;
     canTxBuffer.BMSCurrentLimit.BMSChargeCurrent_hi = 0;
     canTxBuffer.BMSCurrentLimit.BMSCurrentLimit_lo = 255;
     canTxBuffer.BMSCurrentLimit.BMSCurrentLimit_hi = 0;
+    txMessage.buffer = canTxBuffer.array;
     twai_node_transmit(mobo_node_handle, &txMessage,0);
   }
 
@@ -228,13 +261,20 @@ void canTxPeriodic(){
     //charging message
     txMessage.header.ide = true;
     txMessage.header.id = id_ElconLimits;
-    canTxBuffer.elconLimits.maxChargeCurrent_lo = (CHARGE_TARGET * 10) & 0xFF;
-    canTxBuffer.elconLimits.maxChargeCurrent_hi = ((CHARGE_TARGET * 10) & 0xFF00)>>8;
-    canTxBuffer.elconLimits.maxChargeCurrent_lo = (CHARGE_CURRENT * 10) & 0xFF;
-    canTxBuffer.elconLimits.maxChargeCurrent_hi = ((CHARGE_CURRENT * 10) & 0xFF00)>>8;
+    txMessage.header.rtr = false;
+    txMessage.header.dlc = 8;
+    canTxBuffer.elconLimits.maxChargeVoltage_lo = ((CHARGE_TARGET * 10) & 0xFF00)>>8;
+    canTxBuffer.elconLimits.maxChargeVoltage_hi = (CHARGE_TARGET * 10) & 0xFF;
+    canTxBuffer.elconLimits.maxChargeCurrent_lo = ((CHARGE_CURRENT * 10) & 0xFF00)>>8;
+    canTxBuffer.elconLimits.maxChargeCurrent_hi = (CHARGE_CURRENT * 10) & 0xFF;
     canTxBuffer.elconLimits.control = moboState.currentState == CHARGING ? 0 : 1;
     txMessage.buffer = canTxBuffer.array;
-    twai_node_transmit(mobo_node_handle, &txMessage,0);
+    esp_err_t err = twai_node_transmit(mobo_node_handle, &txMessage, 0);
+    if (err != ESP_OK) {
+      ESP_LOGE(TAG, "ELCON TX failed: %d", (int)err);
+    } else {
+      ESP_LOGI(TAG, "ELCON TX success");
+    }
     txMessage.header.ide = false;
     txCounter = 0;
   }

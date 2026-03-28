@@ -16,7 +16,9 @@ void app_main() {
   esp_log_level_set("statemachine", CONFIG_LOG_MAXIMUM_LEVEL);
   
   //init functions go here
-  initIO();
+  initIO(); 
+  gpio_set_direction(CHARGE_EN,GPIO_MODE_INPUT);
+  gpio_set_pull_mode(CHARGE_EN,GPIO_PULLUP_ONLY);
   initCAN();
 
   //create periodic function timer
