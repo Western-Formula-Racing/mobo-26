@@ -28,22 +28,37 @@ void stateTransition(){
       moboState.lastState = PRECHARGE;
       outputStates[OUTPUTS_PRECH_OK] = 1;
       ESP_LOGI(TAG, "PRECHARGE -> HV_ACTIVE");
-      break;
-      // // check if precharge timed out
-      // if((pdTICKS_TO_MS(xTaskGetTickCount()) - moboState.prechargeStartTime) > PRECHARGE_TIMEOUT){
-      //   ESP_LOGE(TAG, "Precharge Timed out!");
-      //   moboState.currentState = FAULT;
-      //   moboState.lastState = PRECHARGE;
-      //   moboState.error = PRECHARGE_FAIL;
-      //   break;
-      // }
-      // // check if precharge success
-      // if( Vsense_VtoV(analogVoltages[ANALOG_VSENSE]) > (PRECHARGE_RATIO * getPackVoltage()) && (pdTICKS_TO_MS(xTaskGetTickCount()) - moboState.prechargeStartTime) > PRECHARGE_MINDELAY){
-      //   moboState.currentState = HV_ACTIVE;
-      //   moboState.lastState = PRECHARGE;
-      //   outputStates[OUTPUTS_PRECH_OK] = 1;
-      //   ESP_LOGI(TAG, "PRECHARGE -> HV_ACTIVE");
-      // }
+      // check if precharge timed out
+      if((pdTICKS_TO_MS(xTaskGetTickCount()) - moboState.prechargeStartTime) > PRECHARGE_TIMEOUT){
+        ESP_LOGE(TAG, "Precharge Timed out!");
+        moboState.currentState = FAULT;
+        moboState.lastState = PRECHARGE;
+        moboState.error = PRECHARGE_FAIL;
+        break;
+      }
+      #ifdef INVERTER_PRECHARGE
+      // check if precharge success
+      // Success conditions:
+      if((pdTICKS_TO_MS(xTaskGetTickCount()) - moboState.prechargeStartTime) > PRECHARGE_MINDELAY){ //if precharge has been going for at least the minimum delay tim
+        if( !inCar || inCar && inverterVoltage > (PRECHARGE_RATIO * getPackVoltage()) ){ // if in car, check inverter voltage - if not in car, don't check
+          moboState.currentState = HV_ACTIVE;
+          moboState.lastState = PRECHARGE;
+          outputStates[OUTPUTS_PRECH_OK] = 1;
+          ESP_LOGI(TAG, "PRECHARGE -> HV_ACTIVE");
+        }
+      }
+      #endif
+
+      #ifndef INVERTER_PRECHARGE
+      // check if precharge success
+      if( Vsense_VtoV(analogVoltages[ANALOG_VSENSE]) > (PRECHARGE_RATIO * getPackVoltage()) && (pdTICKS_TO_MS(xTaskGetTickCount()) - moboState.prechargeStartTime) > PRECHARGE_MINDELAY){
+        moboState.currentState = HV_ACTIVE;
+        moboState.lastState = PRECHARGE;
+        outputStates[OUTPUTS_PRECH_OK] = 1;
+        ESP_LOGI(TAG, "PRECHARGE -> HV_ACTIVE");
+      }
+      #endif
+      
       break;
     case HV_ACTIVE:
       // if charge switch toggled, switch to charging mode
@@ -58,9 +73,10 @@ void stateTransition(){
         outputStates[OUTPUTS_PRECH_OK] = 0;
         ESP_LOGI(TAG, "HV_ACTIVE -> IDLE");
       }
-      if(inputStates[IMD_RELAY] == 0 || inputStates[GPIO_BMS_OK] == 0){
+      if(inputStates[IMD_RELAY] == 0 || outputStates[OUTPUTS_BMS_OK] == 0){
         moboState.currentState = FAULT;
         moboState.lastState = HV_ACTIVE;
+        outputStates[OUTPUTS_BMS_OK] = 0;
         outputStates[OUTPUTS_PRECH_OK] = 0;
         ESP_LOGI(TAG, "HV_ACTIVE -> FAULT");
       }

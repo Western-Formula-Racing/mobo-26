@@ -1,9 +1,13 @@
 #pragma once
 #include "CANMessages.h"
+#include "config.h"
 // CAN IDs
 enum canID{
   //rx ids
-  id_tochFault = 1000,
+  id_torchFault = 1000,
+  #ifdef INVERTER_PRECHARGE
+  id_InverterVoltageInfo = 167,
+  #endif
   // TX ids
   id_packStatus = 1056,
   id_packInfo = 1057,
@@ -19,6 +23,12 @@ typedef struct {
 
 extern int bus_recovery_attempts;
 
+#ifdef INVERTER_PRECHARGE
+extern int inCar = false;
+extern float inverterVoltage = 0;
+#endif
+
+
 void initCAN();
 void canTxPeriodic();
 void printCANInfo();
@@ -33,4 +43,7 @@ union CANBuffer_u{
   BMSVoltages_m BMSVoltages;
   BMSTemperatures_m BMSTemperatures;
   TORCHFault_m TORCHFault;
+  #ifdef INVERTER_PRECHARGE
+  InverterVoltageInfo_m InverterVoltageInfo;
+  #endif
 };

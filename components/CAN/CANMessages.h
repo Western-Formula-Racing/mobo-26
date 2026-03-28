@@ -31,25 +31,13 @@ typedef struct{
   uint8_t AMS : 1;
   uint8_t BSPD : 1;
   uint8_t Latch : 1;
+  uint8_t AIRN : 1;
   uint8_t HVActive : 3;
   uint8_t SOC_lo;
   uint8_t SOC_hi;
   uint8_t packStatus;
   uint8_t fault;
 } packStatus_m;
-
-// typedef struct{
-//   uint16_t packCurrent16;
-//   uint8_t IMD : 1;
-//   uint8_t AMS : 1;
-//   uint8_t BSPD : 1;
-//   uint8_t Latch : 1;
-//   uint8_t AirN: 1;
-//   uint8_t HVActive : 3;
-//   uint16_t SOC;
-//   uint8_t packStatus;
-//   uint8_t fault;
-// } packStatus_m;
 
 typedef struct{
   uint8_t BMSCurrentLimit_lo;
@@ -93,3 +81,10 @@ typedef struct{
   uint8_t spare5;
   uint8_t spare6;
 } TORCHFault_m;
+
+typedef struct{
+  int16_t INV_DC_Bus_Voltage;
+  int16_t INV_Output_Voltage;
+  int16_t INV_VAB_Vd_Voltage;
+  int16_t INV_VBC_Vq_Voltage;
+} InverterVoltageInfo_m;

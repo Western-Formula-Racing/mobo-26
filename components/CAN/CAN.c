@@ -20,6 +20,11 @@ twai_node_record_t canRecord;
 int bus_recovery_attempts = 0;
 uint32_t lastModuleTimestamp[5] = {0,0,0,0,0};
 
+#ifdef INVERTER_PRECHARGE
+int inCar = false;
+float inverterVoltage = 0;
+#endif
+
 int f2i_CAN(float input, float factor, int offset){
   //convert float to int
   return (int)((input * factor) + offset);
@@ -55,12 +60,11 @@ void canTask(void *arg)
         setModuleVoltage(module, cell++, s4);
 
         lastModuleTimestamp[module] = xTaskGetTickCount();
-      } else if (rx_frame.header.id == id_tochFault){
+      } else if (item.id == id_torchFault){
         int error = rx_data.TORCHFault.faultCode;
         int module = rx_data.TORCHFault.moduleID;
         raiseTorchError(error, module);
-      }
-      else if (item.id >= 1031 && item.id <= 1055) {
+      } else if (item.id >= 1031 && item.id <= 1055) {
         double s1 = (rx_data.BMSTemperatures.t1_lo | (rx_data.BMSTemperatures.t1_hi << 8)) * 0.001;
         double s2 = (rx_data.BMSTemperatures.t2_lo | (rx_data.BMSTemperatures.t2_hi << 8)) * 0.001;
         double s3 = (rx_data.BMSTemperatures.t3_lo | (rx_data.BMSTemperatures.t3_hi << 8)) * 0.001;
@@ -76,13 +80,19 @@ void canTask(void *arg)
           setModuleTemp(module, cell++, s3);
           setModuleTemp(module, cell++, s4);
         }
-
         lastModuleTimestamp[module] = xTaskGetTickCount();
-      } else if (item.id == id_tochFault){
+      
+      } else if (item.id == id_torchFault){
         int error = rx_data.TORCHFault.faultCode;
         int module = rx_data.TORCHFault.moduleID;
         raiseTorchError(error, module);
+      } 
+      #ifdef INVERTER_PRECHARGE
+      else if (item.id == id_InverterVoltageInfo){
+        inCar = true;
+        inverterVoltage = rx_data.InverterVoltageInfo.INV_DC_Bus_Voltage / 10.0f;
       }
+      #endif
     }
     twai_node_get_info(mobo_node_handle,&canStatus,&canRecord);
     if(canStatus.state == TWAI_ERROR_BUS_OFF && bus_recovery_attempts < MAX_RECOVERY_ATTEMPTS){
@@ -177,37 +187,42 @@ twai_frame_t txMessage = {
 // Periodic function for transmission of CAN messages
 void canTxPeriodic(){
 
-    // send every 10ms
+  // send every 10ms
 
-    // send every 100ms
+  // send every 100ms
   if(txCounter%10 == 0){
-      // PackStatus (ID 1056) - only PackStatus + Fault set
+    // PackStatus (ID 1056) - only PackStatus + Fault set
     txMessage.header.id  = id_packStatus;   // 1056 (0x420)
     txMessage.header.ide = false;           // standard 11-bit
     txMessage.header.rtr = false;
     txMessage.header.dlc = 8;
 
-    memset(canTxBuffer.array, 0, 8);
-
-    //IMD status in bit 0 of byte 2
-    uint8_t imd = inputStates[IMD_RELAY] & 0x1;
-    canTxBuffer.array[2] |= (imd << 0);
-
-    //AMS status in bit 1 of byte 2
-    uint8_t ams = gpio_get_level(GPIO_BMS_OK) & 0x1;
-    canTxBuffer.array[2] |= (ams << 1);
-
-    // Use your enums directly (full bytes in DBC)
-    canTxBuffer.array[5] = (uint8_t)moboState.currentState; // PackStatus
-    canTxBuffer.array[6] = (uint8_t)moboState.error;        // Fault
+    memset(canTxBuffer.array, 0, 8); //reset buffer
+    //TODO: fix current sensor
+    //int packCurrent = Cursense_VtoA(analogVoltages[ANALOG_CURSENSE]);
+    canTxBuffer.packStatus.packCurrent_lo = 0; //packCurrent & 0xFF;
+    canTxBuffer.packStatus.packCurrent_hi = 0; //(packCurrent & 0xFF00)>>8;
+    canTxBuffer.packStatus.IMD = inputStates[IMD_RELAY] & 0x1;
+    canTxBuffer.packStatus.AMS = outputStates[OUTPUTS_BMS_OK] & 0x1;
+    canTxBuffer.packStatus.BSPD = inputStates[BSPD_RELAY] & 0x1;
+    canTxBuffer.packStatus.Latch = inputStates[LATCH_RELAY] & 0x1;
+    canTxBuffer.packStatus.AIRN = inputStates[AIRN_RELAY] & 0x1;
+    canTxBuffer.packStatus.HVActive = inputStates[HV_ACTIVE] & 0x1;
+    //TODO: rough SOC approx
+    canTxBuffer.packStatus.SOC_lo = 0;
+    canTxBuffer.packStatus.SOC_hi = 0;
+    canTxBuffer.packStatus.packStatus = moboState.currentState;
+    canTxBuffer.packStatus.fault = moboState.error;
+    txMessage.buffer = canTxBuffer.array;
+    twai_node_transmit(mobo_node_handle, &txMessage, 0);
 
     txMessage.buffer = canTxBuffer.array;
 
     esp_err_t err = twai_node_transmit(mobo_node_handle, &txMessage, pdMS_TO_TICKS(10));
     if (err != ESP_OK) {
-      printf("PackStatus TX failed: %d\n", (int)err);
+      ESP_LOGE(TAG, "PackStatus TX failed: %d\n", (int)err);
     }
-    // //packinfo
+    // Packinfo
     txMessage.header.id = id_packInfo;
     int minTemp = f2i_CAN(getMinTemp(),10,0);
     int maxTemp = f2i_CAN(getMaxTemp(),10,0);
@@ -225,26 +240,8 @@ void canTxPeriodic(){
     
     err = twai_node_transmit(mobo_node_handle, &txMessage,0);
     if (err != ESP_OK) {
-      printf("PackInfo TX failed: %d\n", (int)err);
+      ESP_LOGE(TAG, "PackInfo TX failed: %d\n", (int)err);
     }
-    // //packStatus
-    // txMessage.header.id = 1056;
-    // int packCurrent = Cursense_VtoA(analogVoltages[ANALOG_CURSENSE]);
-    // canTxBuffer.packStatus.packCurrent_lo = packCurrent & 0xFF;
-    // canTxBuffer.packStatus.packCurrent_hi = (packCurrent & 0xFF00)>>8;
-    // canTxBuffer.packStatus.IMD = inputStates[IMD_RELAY] & 0x1;
-    // canTxBuffer.packStatus.AMS = gpio_get_level(GPIO_BMS_OK) & 0x1;
-    // canTxBuffer.packStatus.BSPD = inputStates[BSPD_RELAY] & 0x1;
-    // canTxBuffer.packStatus.Latch = inputStates[LATCH_RELAY] & 0x1;
-    // canTxBuffer.packStatus.HVActive = inputStates[HV_ACTIVE] & 0x1;
-    // //TODO: rough SOC approx
-    // canTxBuffer.packStatus.SOC_lo = 0;
-    // canTxBuffer.packStatus.SOC_hi = 0;
-    // canTxBuffer.packStatus.packStatus = moboState.currentState;
-    // canTxBuffer.packStatus.fault = moboState.error;
-    // txMessage.buffer = canTxBuffer.array;
-    // twai_node_transmit(mobo_node_handle, &txMessage, 0);
-
 
     // //BMS Current limit to Cascadia Inverter
     txMessage.header.id = id_BMSCurrentLimit;
@@ -272,8 +269,6 @@ void canTxPeriodic(){
     esp_err_t err = twai_node_transmit(mobo_node_handle, &txMessage, 0);
     if (err != ESP_OK) {
       ESP_LOGE(TAG, "ELCON TX failed: %d", (int)err);
-    } else {
-      ESP_LOGI(TAG, "ELCON TX success");
     }
     txMessage.header.ide = false;
     txCounter = 0;
