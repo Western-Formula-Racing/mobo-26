@@ -40,7 +40,7 @@ void stateTransition(){
       // check if precharge success
       // Success conditions:
       if((pdTICKS_TO_MS(xTaskGetTickCount()) - moboState.prechargeStartTime) > PRECHARGE_MINDELAY){ //if precharge has been going for at least the minimum delay tim
-        if( !inCar || inCar && inverterVoltage > (PRECHARGE_RATIO * getPackVoltage()) ){ // if in car, check inverter voltage - if not in car, don't check
+        if( !inCar || (inCar && inverterVoltage > (PRECHARGE_RATIO * getPackVoltage()))){ // if in car, check inverter voltage - if not in car, don't check
           moboState.currentState = HV_ACTIVE;
           moboState.lastState = PRECHARGE;
           outputStates[OUTPUTS_PRECH_OK] = 1;

@@ -24,8 +24,8 @@ typedef struct {
 extern int bus_recovery_attempts;
 
 #ifdef INVERTER_PRECHARGE
-extern int inCar = false;
-extern float inverterVoltage = 0;
+extern int inCar;
+extern float inverterVoltage;
 #endif
 
 
