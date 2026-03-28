@@ -20,15 +20,6 @@ twai_node_record_t canRecord;
 int bus_recovery_attempts = 0;
 uint32_t lastModuleTimestamp[5] = {0,0,0,0,0};
 
-
-typedef struct {
-  uint32_t id;
-  uint8_t  dlc;
-  uint8_t  data[8];
-} CanRxItem;
-
-
-
 int f2i_CAN(float input, float factor, int offset){
   //convert float to int
   return (int)((input * factor) + offset);
@@ -64,6 +55,10 @@ void canTask(void *arg)
         setModuleVoltage(module, cell++, s4);
 
         lastModuleTimestamp[module] = xTaskGetTickCount();
+      } else if (rx_frame.header.id == id_tochFault){
+        int error = rx_data.TORCHFault.faultCode;
+        int module = rx_data.TORCHFault.moduleID;
+        raiseTorchError(error, module);
       }
       else if (item.id >= 1031 && item.id <= 1055) {
         double s1 = (rx_data.BMSTemperatures.t1_lo | (rx_data.BMSTemperatures.t1_hi << 8)) * 0.001;
@@ -83,11 +78,10 @@ void canTask(void *arg)
         }
 
         lastModuleTimestamp[module] = xTaskGetTickCount();
-      }
-      else if (item.id == 1000) {
-        uint8_t module_id = rx_data.array[0];
-        uint8_t err       = rx_data.array[1];
-        (void)module_id;
+      } else if (item.id == id_tochFault){
+        int error = rx_data.TORCHFault.faultCode;
+        int module = rx_data.TORCHFault.moduleID;
+        raiseTorchError(error, module);
       }
     }
     twai_node_get_info(mobo_node_handle,&canStatus,&canRecord);
@@ -106,25 +100,25 @@ void canTask(void *arg)
     }
   }
 }
- 
+
 static bool can_rx_cb(twai_node_handle_t handle,
                       const twai_rx_done_event_data_t *edata,
                       void *user_ctx)
 {
-  twai_frame_t f;
+  twai_frame_t incoming_frame;
   uint8_t buf[8];
 
-  memset(&f, 0, sizeof(f));
-  f.buffer = buf;
-  f.buffer_len = sizeof(buf);
+  memset(&incoming_frame, 0, sizeof(incoming_frame));
+  incoming_frame.buffer = buf;
+  incoming_frame.buffer_len = sizeof(buf);
 
-  if (twai_node_receive_from_isr(handle, &f) != ESP_OK) {
+  if (twai_node_receive_from_isr(handle, &incoming_frame) != ESP_OK) {
     return false;
   }
 
   CanRxItem item = {0};
-  item.id  = f.header.id;
-  item.dlc = f.header.dlc;
+  item.id  = incoming_frame.header.id;
+  item.dlc = incoming_frame.header.dlc;
 
   uint8_t n = (item.dlc > 8) ? 8 : item.dlc;
   memcpy(item.data, buf, n);

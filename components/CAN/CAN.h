@@ -2,12 +2,20 @@
 #include "CANMessages.h"
 // CAN IDs
 enum canID{
+  //rx ids
+  id_tochFault = 1000,
   // TX ids
   id_packStatus = 1056,
   id_packInfo = 1057,
   id_BMSCurrentLimit = 514,
   id_ElconLimits = 403105268,
 };
+
+typedef struct {
+  uint32_t id;
+  uint8_t  dlc;
+  uint8_t  data[8];
+} CanRxItem;
 
 extern int bus_recovery_attempts;
 
@@ -24,4 +32,5 @@ union CANBuffer_u{
   BMSCurrentLimit_m BMSCurrentLimit;
   BMSVoltages_m BMSVoltages;
   BMSTemperatures_m BMSTemperatures;
+  TORCHFault_m TORCHFault;
 };

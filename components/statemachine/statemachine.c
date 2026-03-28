@@ -7,17 +7,17 @@
 
 state_t moboState;
 static const char* TAG = "statemachine";
-
+uint8_t module, errIndex;
+uint8_t module, errIndex;
 
 void stateTransition(){
-  
   switch(moboState.currentState){
     case IDLE:
       outputStates[OUTPUTS_BMS_OK] = 1;
       // check for precharge start
       if(inputStates[AIRN_RELAY] == 1 && inputStates[LATCH_RELAY] == 1 && inputStates[BSPD_RELAY] == 1 && inputStates[IMD_RELAY] == 1){
         moboState.currentState = PRECHARGE;
-        moboState.lastState = IDLE; 
+        moboState.lastState = IDLE;
         moboState.prechargeStartTime = pdTICKS_TO_MS(xTaskGetTickCount());
         ESP_LOGI(TAG, "IDLE -> PRECHARGE");
       }
@@ -92,39 +92,48 @@ void stateTransition(){
       ESP_LOGI(TAG, "idk how tf you got here");
       break;
     case FAULT:
-      ESP_LOGE(TAG,"FAULT: %d", moboState.error);
       outputStates[OUTPUTS_RED_LED] = 1;
       outputStates[OUTPUTS_BMS_OK] = 0;
+      outputStates[OUTPUTS_PRECH_OK] = 0;
       break;
   }
 }
 
 void errorCheck(){
+  // skip check if already in fault state
+  if (moboState.currentState == FAULT) return; 
   // 2 error check levels: mission mode for only critical faults, and test mode for all faults
-  if(getMaxTemp() > OVERTEMP_THRESHOLD){
+  if(getMaxTempIndex(&module, &errIndex) > OVERTEMP_THRESHOLD){
     moboState.error = OVERTEMP;
     moboState.lastState = moboState.currentState;
     moboState.currentState = FAULT;
+    moboState.errorIndex = errIndex;
+    moboState.errorModule = module;
     ESP_LOGE(TAG, "Fault: OVERTEMP");
-  } else if(getMaxVoltage() > OVERVOLTAGE_THRESHOLD){
-      moboState.error = OVERVOLTAGE;
-      moboState.lastState = moboState.currentState;
-      moboState.currentState = FAULT;
-      ESP_LOGE(TAG, "Fault: OVERVOLTAGE");
-  } else if(getMinVoltage() < UNDERVOLTAGE_THRESHOLD && getMinVoltage() > 0){ // if voltage is 0, it's likely an open circuit which is a different fault
+  } else if(getMaxVoltageIndex(&module, &errIndex) > OVERVOLTAGE_THRESHOLD){
+    moboState.error = OVERVOLTAGE;
+    moboState.lastState = moboState.currentState;
+    moboState.currentState = FAULT;
+    moboState.errorIndex = errIndex;
+    moboState.errorModule = module;
+    ESP_LOGE(TAG, "Fault: OVERVOLTAGE");
+  } else if(getMinVoltageIndex(&module, &errIndex) < UNDERVOLTAGE_THRESHOLD && getMinVoltage() > 0){
     moboState.error = UNDERVOLTAGE;
     moboState.lastState = moboState.currentState;
     moboState.currentState = FAULT;
+    moboState.errorIndex = errIndex;
+    moboState.errorModule = module;
     ESP_LOGE(TAG, "Fault: UNDERVOLTAGE");
   } else if (Cursense_VtoA(analogVoltages[ANALOG_CURSENSE]) > CURRENT_LIMIT){
     moboState.error = OVERCURRENT;
     moboState.lastState = moboState.currentState;
     moboState.currentState = FAULT;
     ESP_LOGE(TAG, "Fault: OVERCURRENT");
-  } else if(getMaxModuleTimeout() > MAX_MODULE_TIMEOUT){
+  } else if(getMaxModuleTimeout(&module) > MAX_MODULE_TIMEOUT){
     moboState.error = CANTIMEOUT;
     moboState.lastState = moboState.currentState;
     moboState.currentState = FAULT;
+    moboState.errorModule = module;
     ESP_LOGE(TAG, "Fault: CAN Timeout");
   }else if(bus_recovery_attempts >= MAX_RECOVERY_ATTEMPTS){
     moboState.error = CANERROR;
@@ -134,7 +143,20 @@ void errorCheck(){
   }
 }
 
+void raiseTorchError(enum error_e error, int module){
+  moboState.error = error;
+  moboState.errorModule = module;
+  moboState.lastState = moboState.currentState;
+  moboState.currentState = FAULT;
+}
+
 void stateMachinePeriodic(){
   errorCheck();
   stateTransition();
+}
+
+void printFault(){
+  if(moboState.currentState == FAULT){
+    ESP_LOGE(TAG,"Current State: %d, Last State: %d, Error: %d, Module: %d, Index: %d", moboState.currentState, moboState.lastState, moboState.error, moboState.errorModule, moboState.errorIndex);
+  }
 }
