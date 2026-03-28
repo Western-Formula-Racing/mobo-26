@@ -10,7 +10,6 @@ static const char* TAG = "statemachine";
 uint8_t module, errIndex;
 uint8_t module, errIndex;
 
-
 void stateTransition(){
   switch(moboState.currentState){
     case IDLE:
