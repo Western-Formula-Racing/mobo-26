@@ -85,7 +85,7 @@ void digitalInputs(){
   inputBuffers[BSPD_RELAY][0]  = gpio_get_level(GPIO_BSPD);
   inputBuffers[LATCH_RELAY][0] = gpio_get_level(GPIO_LATCH);
   inputBuffers[AIRN_RELAY][0]  = gpio_get_level(GPIO_AIRN);
-  //printf(">AIRN0:%d \n>AIRN1:%d \n>AIRN2:%d \n>AIRN3:%d \n>AIRN4:%d",inputBuffers[AIRN_RELAY][0],inputBuffers[AIRN_RELAY][1],inputBuffers[AIRN_RELAY][2],inputBuffers[AIRN_RELAY][3],inputBuffers[AIRN_RELAY][4]);
+  printf(">AIRN0,AirBuffer:%d \n>AIRN1,AirBuffer:%d \n>AIRN2,AirBuffer:%d \n>AIRN3,AirBuffer:%d \n>AIRN4,AirBuffer:%d\n",inputBuffers[AIRN_RELAY][0],inputBuffers[AIRN_RELAY][1],inputBuffers[AIRN_RELAY][2],inputBuffers[AIRN_RELAY][3],inputBuffers[AIRN_RELAY][4]);
   inputBuffers[AIRP_RELAY][0]  = gpio_get_level(GPIO_AIRP);
   inputBuffers[CHARGE_EN][0]  = gpio_get_level(GPIO_CHARGE_EN);
 

@@ -23,6 +23,8 @@ uint32_t lastModuleTimestamp[5] = {0,0,0,0,0};
 #ifdef INVERTER_PRECHARGE
 int inCar = false;
 float inverterVoltage = 0;
+uint32_t lastInverterTimestamp = 0;
+uint32_t inverterTimeout = 0;
 #endif
 
 int f2i_CAN(float input, float factor, int offset){
@@ -91,6 +93,7 @@ void canTask(void *arg)
       else if (item.id == id_InverterVoltageInfo){
         inCar = true;
         inverterVoltage = rx_data.InverterVoltageInfo.INV_DC_Bus_Voltage / 10.0f;
+        lastInverterTimestamp = xTaskGetTickCount();
       }
       #endif
     }
@@ -104,12 +107,13 @@ void canTask(void *arg)
       }
       bus_recovery_attempts++;
     }
-    //update module timeout
-    for(int i = 0; i < 5; i++){
-      modules[i].timeout = pdTICKS_TO_MS(xTaskGetTickCount() - lastModuleTimestamp[i]);
-    }
   }
-}
+  //update module timeout
+  for(int i = 0; i < 5; i++){
+    modules[i].timeout = pdTICKS_TO_MS(xTaskGetTickCount() - lastModuleTimestamp[i]);
+  }
+  inverterTimeout = pdTICKS_TO_MS(xTaskGetTickCount() - lastInverterTimestamp);
+  }
 
 static bool can_rx_cb(twai_node_handle_t handle,
                       const twai_rx_done_event_data_t *edata,
@@ -142,13 +146,16 @@ static bool can_rx_cb(twai_node_handle_t handle,
 
 // init CAN
 void initCAN(){
+  lastInverterTimestamp = xTaskGetTickCount();
   //create RX queue
-  canRxQueue = xQueueCreate(10, sizeof(CanRxItem));
+  canRxQueue = xQueueCreate(30, sizeof(CanRxItem));
   //configure TWAI node
   twai_onchip_node_config_t node_config = {
     .io_cfg.tx = GPIO_CAN_TX,             // TWAI TX GPIO pin
     .io_cfg.rx = GPIO_CAN_RX,             // TWAI RX GPIO pin
     .bit_timing.bitrate = 500000,  // 500 kbps bitrate
+    .bit_timing.sp_permill = 250,   // Sample point at 25% of the bit time
+    .bit_timing.ssp_permill = 750,  // Secondary sample point at 75% of the bit time
     .tx_queue_depth = 5,           // Transmit queue depth set to 5
     .fail_retry_cnt = 1,            // retry tx 1 time on fail
   };
@@ -310,6 +317,11 @@ void printCANInfo(){
     ESP_LOGE(TAG, "CAN BUS OFF");
   }
   if(canRecord.bus_err_num > 0){
-    ESP_LOGE(TAG, "Lifetime CAN errors: %d", canRecord.bus_err_num);
+    printf(">CAN errors:%ld\n", canRecord.bus_err_num);
   }
+}
+
+uint32_t getMaxCanTimeout(){
+  //TODO: implement better timeout
+  return inverterTimeout;
 }

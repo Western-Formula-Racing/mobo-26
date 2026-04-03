@@ -23,12 +23,12 @@ void printInfo(){
   printf(">state:%d|np \n>error:%d|np \n", moboState.currentState, moboState.error);
   printf(">pack_voltage:%.2f\n", getPackVoltage());
   printf(">max_cell_voltage:%.3f\n", getMaxVoltage());
-  printf("BMS STATE OK: %d\n",outputStates[OUTPUTS_BMS_OK]);
-  printf("PRECHARGE ERROR: %d\n",outputStates[OUTPUTS_PRECH_OK]);
   printf(">CHARGE_EN: %d\n", gpio_get_level(GPIO_NUM_42));
   //ESP_LOGI(TAG,"> Digital Inputs: IMD: %d | BSPD: %d | LATCH: %d | AIRN: %d | AIRP: %d | CHARGE_EN %d",inputStates[IMD_RELAY],inputStates[BSPD_RELAY],inputStates[LATCH_RELAY],inputStates[AIRN_RELAY],inputStates[AIRP_RELAY],inputStates[CHARGE_EN]);
   //ESP_LOGI(TAG,"> Digital Outputs: BMS_OK: %d | PRECH_OK: %d | RED_LED: %d | GREEN_LED: %d",outputStates[OUTPUTS_BMS_OK],outputStates[OUTPUTS_PRECH_OK],outputStates[OUTPUTS_RED_LED],outputStates[OUTPUTS_GREEN_LED]);
-  printf(">m1_timeout:%d \n>m2_timeout:%d \n>m3_timeout:%d \n>m4_timeout:%d \n>m5_timeout:%d \n",modules[0].timeout,modules[1].timeout,modules[2].timeout,modules[3].timeout,modules[4].timeout);
+  printf(">m1_timeout,Module Timeouts:%d \n>m2_timeout,Module Timeouts:%d \n>m3_timeout,Module Timeouts:%d \n>m4_timeout,Module Timeouts:%d \n>m5_timeout,Module Timeouts:%d \n",modules[0].timeout,modules[1].timeout,modules[2].timeout,modules[3].timeout,modules[4].timeout);
+  printf(">inverter_voltage: %.2f\n", inverterVoltage);
+  printf(">inverter_timeout:%ld\n", getMaxCanTimeout());
   printCANInfo();
 }
 

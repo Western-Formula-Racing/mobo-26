@@ -1,4 +1,4 @@
-#define PRECHARGE_TIMEOUT 5000    // milliseconds
+#define PRECHARGE_TIMEOUT 7000    // milliseconds
 #define PRECHARGE_RATIO   0.9    // % of pack voltage to complete precharge at
 #define CHARGE_TARGET     410     // voltage to stop charging at
 #define CHARGE_CURRENT    5
@@ -10,8 +10,8 @@
 #define UNDERVOLTAGE_THRESHOLD 2.7
 #define MAX_CELL_DELTA  0.2
 #define CURRENT_LIMIT 200
-#define MAX_MODULE_TIMEOUT 5000
-#define PRECHARGE_MINDELAY 2000
+#define MAX_CAN_TIMEOUT 10000
+#define PRECHARGE_MINDELAY 5000
 
 #define MISSION_MODE // only critical faults, for racing
 #define INVERTER_PRECHARGE // precharge voltage from inverter

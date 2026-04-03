@@ -23,11 +23,6 @@ void stateTransition(){
       }
       break;
     case PRECHARGE:
-      vTaskDelay(pdMS_TO_TICKS(5000)); 
-      moboState.currentState = HV_ACTIVE;
-      moboState.lastState = PRECHARGE;
-      outputStates[OUTPUTS_PRECH_OK] = 1;
-      ESP_LOGI(TAG, "PRECHARGE -> HV_ACTIVE");
       // check if precharge timed out
       if((pdTICKS_TO_MS(xTaskGetTickCount()) - moboState.prechargeStartTime) > PRECHARGE_TIMEOUT){
         ESP_LOGE(TAG, "Precharge Timed out!");
@@ -68,6 +63,7 @@ void stateTransition(){
         ESP_LOGI(TAG, "HV_ACTIVE -> CHARGING");
       }
       if(inputStates[AIRN_RELAY] == 0 || inputStates[LATCH_RELAY] == 0 || inputStates[BSPD_RELAY] == 0 ){
+        ESP_LOGE(TAG, ">AIRN:%d \n>LATCH:%d \n>BSPD:%d \n",inputStates[AIRN_RELAY],inputStates[LATCH_RELAY],inputStates[BSPD_RELAY]);
         moboState.currentState = IDLE;
         moboState.lastState = HV_ACTIVE;
         outputStates[OUTPUTS_PRECH_OK] = 0;
@@ -145,7 +141,7 @@ void errorCheck(){
     moboState.lastState = moboState.currentState;
     moboState.currentState = FAULT;
     ESP_LOGE(TAG, "Fault: OVERCURRENT");
-  } else if(getMaxModuleTimeout(&module) > MAX_MODULE_TIMEOUT){
+  } else if(getMaxModuleTimeout(&module) > MAX_CAN_TIMEOUT || getMaxCanTimeout() > MAX_CAN_TIMEOUT){
     moboState.error = CANTIMEOUT;
     moboState.lastState = moboState.currentState;
     moboState.currentState = FAULT;
