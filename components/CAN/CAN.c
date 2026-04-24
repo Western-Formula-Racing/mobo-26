@@ -42,7 +42,7 @@ void canTask(void *arg)
   CanRxItem item;
 
   while (1) {
-    if (xQueueReceive(canRxQueue, &item, 0) == pdTRUE) {
+    if (xQueueReceive(canRxQueue, &item,pdMS_TO_TICKS(10)) == pdTRUE) {
       union CANBuffer_u rx_data;
       memcpy(rx_data.array, item.data, 8);
 
@@ -98,6 +98,7 @@ void canTask(void *arg)
       #endif
     }
     twai_node_get_info(mobo_node_handle,&canStatus,&canRecord);
+    printCANInfo();
     if(canStatus.state == TWAI_ERROR_BUS_OFF && bus_recovery_attempts < MAX_RECOVERY_ATTEMPTS){
       ESP_LOGE(TAG,"CAN Bus Error - off. Recovery Attempts: %d Attempting recovery...", bus_recovery_attempts);
       if(twai_node_recover(mobo_node_handle) == ESP_OK){
@@ -123,7 +124,7 @@ void canTask(void *arg)
       modules[i].timeout = pdTICKS_TO_MS(xTaskGetTickCount() - lastModuleTimestamp[i]);
     }
     inverterTimeout = pdTICKS_TO_MS(xTaskGetTickCount() - lastInverterTimestamp);
-  
+    vTaskDelay(pdMS_TO_TICKS(10));
   }
   
   }
@@ -263,8 +264,8 @@ void canTxPeriodic(){
     canTxBuffer.packStatus.SOC_hi = 0;
     canTxBuffer.packStatus.packStatus = moboState.currentState;
     canTxBuffer.packStatus.fault = moboState.error;
-    memcpy(packStatusMsg.buffer, canTxBuffer.array, 8);
-    twai_node_transmit(mobo_node_handle, &packStatusMsg, 0);
+    // memcpy(packStatusMsg.buffer, canTxBuffer.array, 8);
+    // twai_node_transmit(mobo_node_handle, &packStatusMsg, 0);
 
     memcpy(packStatusMsg.buffer, canTxBuffer.array, 8);
 
@@ -287,7 +288,7 @@ void canTxPeriodic(){
     canTxBuffer.packInfo.maxVoltage_hi = (maxVoltage & 0xFF00)>>8;
     memcpy(packInfoMsg.buffer, canTxBuffer.array, 8);
     
-    err = twai_node_transmit(mobo_node_handle, &packInfoMsg,0);
+    err = twai_node_transmit(mobo_node_handle, &packInfoMsg, pdMS_TO_TICKS(10));
     if (err != ESP_OK) {
       ESP_LOGE(TAG, "PackInfo TX failed: %d\n", (int)err);
     }
@@ -298,7 +299,7 @@ void canTxPeriodic(){
     canTxBuffer.BMSCurrentLimit.BMSCurrentLimit_lo = 255;
     canTxBuffer.BMSCurrentLimit.BMSCurrentLimit_hi = 0;
     memcpy(bmsCurrentLimitMsg.buffer, canTxBuffer.array, 8);
-    twai_node_transmit(mobo_node_handle, &bmsCurrentLimitMsg,0);
+    twai_node_transmit(mobo_node_handle, &bmsCurrentLimitMsg,pdMS_TO_TICKS(10));
   }
 
   // send every 1s
@@ -310,7 +311,7 @@ void canTxPeriodic(){
     canTxBuffer.elconLimits.maxChargeCurrent_hi = (CHARGE_CURRENT * 10) & 0xFF;
     canTxBuffer.elconLimits.control = moboState.currentState == CHARGING ? 0 : 1;
     memcpy(elconLimitsMsg.buffer, canTxBuffer.array, 8);
-    esp_err_t err = twai_node_transmit(mobo_node_handle, &elconLimitsMsg, 0);
+    esp_err_t err = twai_node_transmit(mobo_node_handle, &elconLimitsMsg, pdMS_TO_TICKS(10));
     if (err != ESP_OK) {
       ESP_LOGE(TAG, "ELCON TX failed: %d", (int)err);
     }
