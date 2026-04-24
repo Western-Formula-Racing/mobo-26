@@ -146,6 +146,7 @@ void errorCheck(){
     moboState.lastState = moboState.currentState;
     moboState.currentState = FAULT;
     moboState.errorModule = module;
+    moboState.timeout_length = getMaxModuleTimeout(&module);
     ESP_LOGE(TAG, "Fault: CAN Timeout");
   }else if(bus_recovery_attempts >= MAX_RECOVERY_ATTEMPTS){
     moboState.error = CANERROR;
@@ -169,6 +170,6 @@ void stateMachinePeriodic(){
 
 void printFault(){
   if(moboState.currentState == FAULT){
-    ESP_LOGE(TAG,"Current State: %d, Last State: %d, Error: %d, Module: %d, Index: %d", moboState.currentState, moboState.lastState, moboState.error, moboState.errorModule, moboState.errorIndex);
+    ESP_LOGE(TAG,"Current State: %d, Last State: %d, Error: %d, Module: %d, Index: %d Timeout_Length: %d\n", moboState.currentState, moboState.lastState, moboState.error, moboState.errorModule, moboState.errorIndex, moboState.timeout_length);
   }
 }
