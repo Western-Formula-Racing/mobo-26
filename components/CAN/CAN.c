@@ -42,7 +42,7 @@ void canTask(void *arg)
   CanRxItem item;
 
   while (1) {
-    if (xQueueReceive(canRxQueue, &item, portMAX_DELAY) == pdTRUE) {
+    if (xQueueReceive(canRxQueue, &item, 0) == pdTRUE) {
       union CANBuffer_u rx_data;
       memcpy(rx_data.array, item.data, 8);
 
@@ -101,18 +101,31 @@ void canTask(void *arg)
     if(canStatus.state == TWAI_ERROR_BUS_OFF && bus_recovery_attempts < MAX_RECOVERY_ATTEMPTS){
       ESP_LOGE(TAG,"CAN Bus Error - off. Recovery Attempts: %d Attempting recovery...", bus_recovery_attempts);
       if(twai_node_recover(mobo_node_handle) == ESP_OK){
+        for (uint8_t i = 0; i < 100; i++) {
+                ESP_LOGI(TAG, "waiting ... %d", i);
+                vTaskDelay(pdMS_TO_TICKS(10));
+                twai_node_get_info(mobo_node_handle, &canStatus, NULL);
+                if (canStatus.state == TWAI_ERROR_ACTIVE) {
+                    ESP_LOGI(TAG, "node recovered! continue");
+                    bus_recovery_attempts = 0;
+                    break;
+                }
+            }
+
         ESP_LOGI(TAG, "CAN Bus Recovery Success!");
       } else{
         ESP_LOGE(TAG, "Could not recover bus");
       }
       bus_recovery_attempts++;
     }
+    //update module timeout
+    for(int i = 0; i < 5; i++){
+      modules[i].timeout = pdTICKS_TO_MS(xTaskGetTickCount() - lastModuleTimestamp[i]);
+    }
+    inverterTimeout = pdTICKS_TO_MS(xTaskGetTickCount() - lastInverterTimestamp);
+  
   }
-  //update module timeout
-  for(int i = 0; i < 5; i++){
-    modules[i].timeout = pdTICKS_TO_MS(xTaskGetTickCount() - lastModuleTimestamp[i]);
-  }
-  inverterTimeout = pdTICKS_TO_MS(xTaskGetTickCount() - lastInverterTimestamp);
+  
   }
 
 static bool can_rx_cb(twai_node_handle_t handle,
