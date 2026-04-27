@@ -10,7 +10,7 @@
 #define UNDERVOLTAGE_THRESHOLD 2.7
 #define MAX_CELL_DELTA  0.2
 #define CURRENT_LIMIT 200
-#define MAX_CAN_TIMEOUT 30000
+#define MAX_CAN_TIMEOUT 60000
 #define PRECHARGE_MINDELAY 5000
 
 #define MISSION_MODE // only critical faults, for racing
