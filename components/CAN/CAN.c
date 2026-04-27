@@ -130,8 +130,20 @@ static bool can_rx_cb(twai_node_handle_t handle,
     return false;
   }
 
+  uint32_t id = incoming_frame.header.id;
+
+  // Drop everything we don't care about before it touches the queue.
+  // Torch fault: 1000, voltages: 1006-1030, temps: 1031-1055, inverter voltage: 167.
+  bool relevant = (id == id_torchFault)
+               || (id >= 1006 && id <= 1055)
+  #ifdef INVERTER_PRECHARGE
+               || (id == id_InverterVoltageInfo)
+  #endif
+               ;
+  if (!relevant) return false;
+
   CanRxItem item = {0};
-  item.id  = incoming_frame.header.id;
+  item.id  = id;
   item.dlc = incoming_frame.header.dlc;
 
   uint8_t n = (item.dlc > 8) ? 8 : item.dlc;
@@ -148,7 +160,7 @@ static bool can_rx_cb(twai_node_handle_t handle,
 void initCAN(){
   lastInverterTimestamp = xTaskGetTickCount();
   //create RX queue
-  canRxQueue = xQueueCreate(30, sizeof(CanRxItem));
+  canRxQueue = xQueueCreate(100, sizeof(CanRxItem));
   //configure TWAI node
   twai_onchip_node_config_t node_config = {
     .io_cfg.tx = GPIO_CAN_TX,             // TWAI TX GPIO pin
