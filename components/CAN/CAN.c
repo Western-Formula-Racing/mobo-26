@@ -188,7 +188,7 @@ void canTask(void *arg)
     canTxBuffer.packStatus.BSPD = inputStates[BSPD_RELAY] & 0x1;
     canTxBuffer.packStatus.Latch = inputStates[LATCH_RELAY] & 0x1;
     canTxBuffer.packStatus.AIRN = inputStates[AIRN_RELAY] & 0x1;
-    canTxBuffer.packStatus.HVActive = inputStates[HV_ACTIVE] & 0x1;
+    canTxBuffer.packStatus.AIRP = inputStates[AIRP_RELAY] & 0x1;
     //TODO: rough SOC approx
     canTxBuffer.packStatus.SOC_lo = 0;
     canTxBuffer.packStatus.SOC_hi = 0;
