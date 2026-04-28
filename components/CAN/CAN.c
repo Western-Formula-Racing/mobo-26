@@ -252,7 +252,7 @@ void canTask(void *arg)
 
 
 
-    vTaskDelay(pdMS_TO_TICKS(1));
+    vTaskDelay(pdMS_TO_TICKS(10));
   }
   
   }
@@ -263,7 +263,7 @@ static bool can_rx_cb(twai_node_handle_t handle,
 {
   twai_frame_t incoming_frame;
   uint8_t buf[8];
-
+  
   memset(&incoming_frame, 0, sizeof(incoming_frame));
   incoming_frame.buffer = buf;
   incoming_frame.buffer_len = sizeof(buf);
@@ -271,16 +271,20 @@ static bool can_rx_cb(twai_node_handle_t handle,
   if (twai_node_receive_from_isr(handle, &incoming_frame) != ESP_OK) {
     return false;
   }
-
-  CanRxItem item = {0};
-  item.id  = incoming_frame.header.id;
-  item.dlc = incoming_frame.header.dlc;
-
-  uint8_t n = (item.dlc > 8) ? 8 : item.dlc;
-  memcpy(item.data, buf, n);
-
   BaseType_t hpTaskWoken = pdFALSE;
-  xQueueSendFromISR(canRxQueue, &item, &hpTaskWoken);
+  if((incoming_frame.header.id >= 1000 && incoming_frame.header.id <= 1060) || incoming_frame.header.id == id_InverterVoltageInfo){
+      
+
+      CanRxItem item = {0};
+      item.id  = incoming_frame.header.id;
+      item.dlc = incoming_frame.header.dlc;
+
+      uint8_t n = (item.dlc > 8) ? 8 : item.dlc;
+      memcpy(item.data, buf, n);
+
+      
+      xQueueSendFromISR(canRxQueue, &item, &hpTaskWoken);
+  }
   return hpTaskWoken == pdTRUE;
 }
 
@@ -290,7 +294,7 @@ static bool can_rx_cb(twai_node_handle_t handle,
 void initCAN(){
   lastInverterTimestamp = xTaskGetTickCount();
   //create RX queue
-  canRxQueue = xQueueCreate(30, sizeof(CanRxItem));
+  canRxQueue = xQueueCreate(300, sizeof(CanRxItem));
   //configure TWAI node
   twai_onchip_node_config_t node_config = {
     .io_cfg.tx = GPIO_CAN_TX,             // TWAI TX GPIO pin
