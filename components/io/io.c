@@ -3,9 +3,10 @@
 #include "io.h"
 #include "esp_log.h"
 
-// ADS7853 Register Commands (bits 15:12)
-#define ADS7X53_WRITE_CFR  0x8  // Write config register
-#define ADS7X53_READ_CFR   0x3  // Read config register
+// TLA2518 specific opcodes and registers
+#define TLA_CMD_WRITE 0x08
+#define TLA_CHANNEL_SEL 0x11
+#define TLA_PIN_CFG 0x01
 
 uint8_t inputBuffers[INPUTS_COUNT][INPUT_BUFFER_SIZE] = {};
 uint8_t inputStates[INPUTS_COUNT] = {};
@@ -19,6 +20,38 @@ static const char* TAG = "io";
 #define ADC_SAMPLE_COUNT 16 // number of samples for moving-average filter
 static uint16_t adcSampleBuffers[ANALOG_COUNT][ADC_SAMPLE_COUNT] = {{0}};
 static uint8_t adcSampleIndex[ANALOG_COUNT] = {0};
+
+// --- TLA2518 Pure C Driver Functions ---
+
+void tla2518_write_register(uint8_t address, uint8_t value) {
+  uint8_t tx_buffer[3] = {TLA_CMD_WRITE, address, value};
+  spi_transaction_t t = {};
+  t.length = 24; // 8 * 3 bytes
+  t.tx_buffer = tx_buffer;
+  spi_device_transmit(adcHandle, &t);
+}
+
+uint16_t tla2518_read_channel(uint8_t channel) {
+  uint8_t tx_buffer[3] = {TLA_CMD_WRITE, TLA_CHANNEL_SEL, channel};
+  uint8_t rx_buffer[2] = {0, 0};
+  
+  spi_transaction_t t = {};
+  t.length = 24;      // Transmit 24 bits total
+  t.tx_buffer = tx_buffer;
+  t.rxlength = 16;    // But only capture the first 16 bits of response
+  t.rx_buffer = rx_buffer;  
+  
+  // Brute-force flush the N+1 pipeline to guarantee current channel data
+  spi_device_transmit(adcHandle, &t);  
+  spi_device_transmit(adcHandle, &t);
+  spi_device_transmit(adcHandle, &t);
+  
+  // Extract the 12-bit value (left-justified in the 16-bit response)
+  uint16_t val = ((uint16_t)rx_buffer[0] << 4) | (rx_buffer[1] >> 4);
+  return val;
+}
+
+// --- End TLA2518 Driver Functions ---
 
 // initilaize digital input/output pins 
 void initIO(){
@@ -43,6 +76,7 @@ void initIO(){
   io_cfg.pin_bit_mask = GPIO_OUTPUT_PIN_SELECT; // output pin mask
   
   gpio_config(&io_cfg); // config outputs
+  
   //SPI init
   ESP_LOGI(TAG, "Initializing SPI...");
   spi_bus_config_t buscfg={
@@ -54,21 +88,18 @@ void initIO(){
   };
   ESP_ERROR_CHECK(spi_bus_initialize(SPI2_HOST, &buscfg, SPI_DMA_CH_AUTO));
   ESP_LOGI(TAG, "SPI initialized");
+  
   spi_device_interface_config_t adcCfg = {
-    .clock_speed_hz = 1*1000*1000,        //Clock out at 1 MHz
-    .mode = 2,                            //SPI mode 1
-    .spics_io_num = ADC_CS,               //CS pin
+    .clock_speed_hz = 10*1000*1000,       // 10 MHz
+    .mode = 0,                            // SPI mode 0 for TLA2518
+    .spics_io_num = ADC_CS,               // CS pin
     .queue_size = 5,
   };
   ESP_LOGI(TAG, "Adding ADC device");
   ESP_ERROR_CHECK(spi_bus_add_device(SPI2_HOST, &adcCfg, &adcHandle));
-  uint8_t txWrite[6] = {0b10001110, 0b01000000, 0, 0, 0, 0}; // Write 0x8440 (bit 6 = internal ref)
-  spi_transaction_t t_write = {
-    .length = 48,
-    .tx_buffer = txWrite,
-    .rx_buffer = NULL
-  };
-  spi_device_transmit(adcHandle, &t_write);
+  
+  // Force all channels to be analog inputs as per the library config
+  tla2518_write_register(TLA_PIN_CFG, 4);
 }
 
 // update digital inputs
@@ -85,7 +116,7 @@ void digitalInputs(){
   inputBuffers[BSPD_RELAY][0]  = gpio_get_level(GPIO_BSPD);
   inputBuffers[LATCH_RELAY][0] = gpio_get_level(GPIO_LATCH);
   inputBuffers[AIRN_RELAY][0]  = gpio_get_level(GPIO_AIRN);
-  printf(">AIRN0,AirBuffer:%d \n>AIRN1,AirBuffer:%d \n>AIRN2,AirBuffer:%d \n>AIRN3,AirBuffer:%d \n>AIRN4,AirBuffer:%d\n",inputBuffers[AIRN_RELAY][0],inputBuffers[AIRN_RELAY][1],inputBuffers[AIRN_RELAY][2],inputBuffers[AIRN_RELAY][3],inputBuffers[AIRN_RELAY][4]);
+  // printf(">AIRN0,AirBuffer:%d \n>AIRN1,AirBuffer:%d \n>AIRN2,AirBuffer:%d \n>AIRN3,AirBuffer:%d \n>AIRN4,AirBuffer:%d\n",inputBuffers[AIRN_RELAY][0],inputBuffers[AIRN_RELAY][1],inputBuffers[AIRN_RELAY][2],inputBuffers[AIRN_RELAY][3],inputBuffers[AIRN_RELAY][4]);
   inputBuffers[AIRP_RELAY][0]  = gpio_get_level(GPIO_AIRP);
   inputBuffers[CHARGE_EN][0]  = gpio_get_level(GPIO_CHARGE_EN);
 
@@ -101,28 +132,18 @@ void digitalInputs(){
     // if all elements are equal, update 
     if(doUpdate == 1){
       inputStates[i] = inputBuffers[i][0];
-      //ESP_LOGI(TAG,"input %d updated to %d, array values: [%d, %d, %d, %d, %d]",i, inputStates[i], inputBuffers[i][0], inputBuffers[i][1], inputBuffers[i][2], inputBuffers[i][3], inputBuffers[i][4]);
     }
   }
 }
 
 // update analog inputs
 void analogInputs(){
-  uint8_t txDummy[6] = {0, 0, 0, 0, 0, 0}; // Dummy data
-  uint8_t rxData[6] = {0};
-  spi_transaction_t t_receive = {
-    .length = 48,           // Send 48 SCLK (6 bytes)
-    .tx_buffer = txDummy,
-    .rx_buffer = rxData     // Response comes in first 2 bytes
-  };
-  spi_device_transmit(adcHandle, &t_receive);
-
-  // Parse 14-bit raw ADC values (two channels per transfer)
-  uint16_t rawValue1 = ((rxData[0] & 0xFF) << 8) | rxData[1]; // 14-bit value from first 2 bytes
-  uint16_t rawValue2 = ((rxData[2] & 0xFF) << 8) | rxData[3]; // 14-bit value from next 2 bytes
+  // Read channels sequentially using the robust C function
+  uint16_t rawValue1 = tla2518_read_channel(0); 
+  uint16_t rawValue2 = tla2518_read_channel(1); 
 
   // Push new samples into circular buffers and compute moving average
-  const float adcMax = 16383.0f; // 14-bit max (2^14 - 1)
+  const float adcMax = 4095.0f; // 12-bit max (2^12 - 1)
   uint32_t sum0 = 0;
   uint32_t sum1 = 0;
 
@@ -150,6 +171,7 @@ void digitalOutputs(){
   gpio_set_level(GPIO_RED_LED,outputStates[OUTPUTS_RED_LED]);
   gpio_set_level(GPIO_GREEN_LED,outputStates[OUTPUTS_GREEN_LED]);
 }
+
 // IO Periodic function
 void ioPeriodic(){
   digitalInputs();

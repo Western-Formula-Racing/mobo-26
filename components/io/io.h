@@ -1,7 +1,11 @@
+#ifndef IO_H
+#define IO_H
+
 #include "freertos/FreeRTOS.h"
 #include "hw_define.h"
+
 #define INPUT_BUFFER_SIZE 5
-#define Cursense_VtoA(v) (v)
+#define Cursense_VtoA(v) (v-2.5)*(1/0.0057)
 //60v = 0.355v on ADC
 
 #define Vsense_VtoV(v) (v)*169.014
@@ -37,3 +41,5 @@ extern float   analogVoltages[ANALOG_COUNT];
 void initIO();
 void ioPeriodic();
 esp_err_t enablePrecharge();
+
+#endif // IO_H
