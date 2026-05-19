@@ -13,5 +13,7 @@
 #define MAX_CAN_TIMEOUT 10000
 #define PRECHARGE_MINDELAY 5000
 
+#define MAX_DEBOUNCE_TIME 50 //50ms
+
 #define MISSION_MODE // only critical faults, for racing
 #define INVERTER_PRECHARGE // precharge voltage from inverter

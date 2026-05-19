@@ -114,6 +114,38 @@ void stateTransition(){
 void errorCheck(){
   // skip check if already in fault state
   if (moboState.currentState == FAULT) return; 
+
+  //Timer variables
+  static uint32_t overvoltage_start_time = 0;
+  static uint32_t undervoltage_start_time = 0;
+  static uint32_t overcurrent_start_time = 0;
+
+  //Initializing timer variables
+    //Overvoltage
+  if(getMaxVoltageIndex(&module, &errIndex) > OVERVOLTAGE_THRESHOLD){
+    if(overvoltage_start_time == 0){
+      overvoltage_start_time = pdTICKS_TO_MS(xTaskGetTickCount());
+    } 
+  } else {
+    overvoltage_start_time = 0;
+  }
+    //Undercurrent
+  if (getMinVoltageIndex(&module, &errIndex) < UNDERVOLTAGE_THRESHOLD && getMinVoltage() > 0){
+    if(undervoltage_start_time == 0){
+      undervoltage_start_time = pdTICKS_TO_MS(xTaskGetTickCount());
+    } 
+  } else {
+    undervoltage_start_time = 0;
+  }
+    //Overcurrent
+  if (Cursense_VtoA(analogVoltages[ANALOG_CURSENSE]) > CURRENT_LIMIT){
+    if(overcurrent_start_time == 0){
+      overcurrent_start_time = pdTICKS_TO_MS(xTaskGetTickCount());
+    } 
+  } else {
+    overcurrent_start_time = 0;
+  }  
+
   // 2 error check levels: mission mode for only critical faults, and test mode for all faults
   if(getMaxTempIndex(&module, &errIndex) > OVERTEMP_THRESHOLD){
     moboState.error = OVERTEMP;
@@ -122,21 +154,21 @@ void errorCheck(){
     moboState.errorIndex = errIndex;
     moboState.errorModule = module;
     ESP_LOGE(TAG, "Fault: OVERTEMP");
-  } else if(getMaxVoltageIndex(&module, &errIndex) > OVERVOLTAGE_THRESHOLD){
+  } else if(overvoltage_start_time!=0 && (pdTICKS_TO_MS(xTaskGetTickCount()) - overvoltage_start_time) > MAX_DEBOUNCE_TIME){
     moboState.error = OVERVOLTAGE;
     moboState.lastState = moboState.currentState;
     moboState.currentState = FAULT;
     moboState.errorIndex = errIndex;
     moboState.errorModule = module;
     ESP_LOGE(TAG, "Fault: OVERVOLTAGE");
-  } else if(getMinVoltageIndex(&module, &errIndex) < UNDERVOLTAGE_THRESHOLD && getMinVoltage() > 0){
+  } else if(undervoltage_start_time!=0 && (pdTICKS_TO_MS(xTaskGetTickCount()) - undervoltage_start_time) > MAX_DEBOUNCE_TIME){
     moboState.error = UNDERVOLTAGE;
     moboState.lastState = moboState.currentState;
     moboState.currentState = FAULT;
     moboState.errorIndex = errIndex;
     moboState.errorModule = module;
     ESP_LOGE(TAG, "Fault: UNDERVOLTAGE");
-  } else if (Cursense_VtoA(analogVoltages[ANALOG_CURSENSE]) > CURRENT_LIMIT){
+  } else if (overcurrent_start_time!=0 && (pdTICKS_TO_MS(xTaskGetTickCount()) - overcurrent_start_time) > MAX_DEBOUNCE_TIME){
     moboState.error = OVERCURRENT;
     moboState.lastState = moboState.currentState;
     moboState.currentState = FAULT;
