@@ -11,7 +11,6 @@ uint8_t module, errIndex;
 uint8_t module, errIndex;
 
 void stateTransition(){
-    outputStates[OUTPUTS_BMS_OK] = 1;
   switch(moboState.currentState){
     case IDLE:
       outputStates[OUTPUTS_BMS_OK] = 1;
@@ -164,7 +163,7 @@ void raiseTorchError(enum error_e error, int module){
 }
 
 void stateMachinePeriodic(){
-  // errorCheck();
+  errorCheck();
   stateTransition();
 }
 
