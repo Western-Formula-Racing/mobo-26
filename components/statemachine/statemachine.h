@@ -40,6 +40,7 @@ typedef struct{
   uint64_t prechargeStartTime;
   int errorIndex; // which cell/thermistor raised error (if applicable)
   int errorModule; // which module raised the error
+  int timeout_length;
 } state_t;
 
 extern state_t moboState;

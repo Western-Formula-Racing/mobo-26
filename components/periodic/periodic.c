@@ -35,7 +35,7 @@ void printInfo(){
 // main periodic callback function
 void periodicCallback(TimerHandle_t xTimer){
   ioPeriodic(); // Digital/Analog IO
-  canTxPeriodic(); // send CAN messages
+  // canTxPeriodic(); // send CAN messages
   stateMachinePeriodic(); // run state machine
   periodicCount++;
   if(periodicCount>10){

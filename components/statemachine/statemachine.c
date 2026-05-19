@@ -141,13 +141,23 @@ void errorCheck(){
     moboState.lastState = moboState.currentState;
     moboState.currentState = FAULT;
     ESP_LOGE(TAG, "Fault: OVERCURRENT");
-  } else if(getMaxModuleTimeout(&module) > MAX_CAN_TIMEOUT || getMaxCanTimeout() > MAX_CAN_TIMEOUT){
+  } else if(getMaxModuleTimeout(&module) > MAX_CAN_TIMEOUT ){
     moboState.error = CANTIMEOUT;
     moboState.lastState = moboState.currentState;
     moboState.currentState = FAULT;
     moboState.errorModule = module;
-    ESP_LOGE(TAG, "Fault: CAN Timeout");
-  }else if(bus_recovery_attempts >= MAX_RECOVERY_ATTEMPTS){
+    moboState.timeout_length = getMaxModuleTimeout(&module);
+    ESP_LOGE(TAG, "Fault: Module CAN Timeout");
+  }
+  else if((moboState.currentState != CHARGING && moboState.currentState != CHARGE_COMPLETE)  && getMaxCanTimeout() > MAX_CAN_TIMEOUT){
+    moboState.error = CANTIMEOUT;
+    moboState.lastState = moboState.currentState;
+    moboState.currentState = FAULT;
+    moboState.errorModule = 7;
+    moboState.timeout_length = getMaxModuleTimeout(&module);
+    ESP_LOGE(TAG, "Fault: Inverter CAN Timeout");
+  }
+  else if(bus_recovery_attempts >= MAX_RECOVERY_ATTEMPTS){
     moboState.error = CANERROR;
     moboState.lastState = moboState.currentState;
     moboState.currentState = FAULT;
@@ -169,6 +179,6 @@ void stateMachinePeriodic(){
 
 void printFault(){
   if(moboState.currentState == FAULT){
-    ESP_LOGE(TAG,"Current State: %d, Last State: %d, Error: %d, Module: %d, Index: %d", moboState.currentState, moboState.lastState, moboState.error, moboState.errorModule, moboState.errorIndex);
+    ESP_LOGE(TAG,"Current State: %d, Last State: %d, Error: %d, Module: %d, Index: %d Timeout_Length: %d\n", moboState.currentState, moboState.lastState, moboState.error, moboState.errorModule, moboState.errorIndex, moboState.timeout_length);
   }
 }
