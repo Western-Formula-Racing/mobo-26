@@ -7,7 +7,7 @@ const char* TAG = "BMS";
 Module modules[5];
 
 void setModuleVoltage(int module, int cell, float newVoltage){
-  if(module < 6 && cell <21){
+  if(module < 6 && cell <21) {
     modules[module].voltages[cell] = newVoltage;
   } 
   else{ESP_LOGE(TAG, "Cell index out of range!");}

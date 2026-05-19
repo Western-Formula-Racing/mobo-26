@@ -10,6 +10,7 @@
 #include "io.h"
 #include "statemachine.h"
 #include "config.h"
+#include "state-of-charge.h"
 
 static const char* TAG = "CAN";
 
@@ -20,6 +21,7 @@ twai_node_record_t canRecord;
 int bus_recovery_attempts = 0;
 uint32_t lastModuleTimestamp[5] = {0,0,0,0,0};
 
+float inverterCurrent = 0.0f;
 #ifdef INVERTER_PRECHARGE
 int inCar = false;
 float inverterVoltage = 0;
@@ -88,9 +90,15 @@ void canTask(void *arg)
         int error = rx_data.TORCHFault.faultCode;
         int module = rx_data.TORCHFault.moduleID;
         raiseTorchError(error, module);
-      } 
+
+      } else if (item.id == id_InverterCurrentInfo){
+        float inverterCurrent = rx_data.InverterCurrentInfo.INV_DC_Bus_Current / 10.0f;
+        
+      } else if (item.id == id_SOCRESET){
+        reset_soc();
+
       #ifdef INVERTER_PRECHARGE
-      else if (item.id == id_InverterVoltageInfo){
+      } else if (item.id == id_InverterVoltageInfo){
         inCar = true;
         inverterVoltage = rx_data.InverterVoltageInfo.INV_DC_Bus_Voltage / 10.0f;
         lastInverterTimestamp = xTaskGetTickCount();
@@ -324,4 +332,8 @@ void printCANInfo(){
 uint32_t getMaxCanTimeout(){
   //TODO: implement better timeout
   return inverterTimeout;
+}
+
+float getInverterCurrent(void){
+  return inverterCurrent;
 }

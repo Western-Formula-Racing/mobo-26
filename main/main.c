@@ -4,6 +4,7 @@
 #include "CAN.h"
 #include "io.h"
 #include "periodic.h"
+#include "state-of-charge.h"
 
 // Code entry point
 void app_main() {
@@ -18,6 +19,7 @@ void app_main() {
   //init functions go here
   initIO(); 
   initCAN();
+  initNVS();
 
   //create periodic function timer
   TimerHandle_t periodicTimer = xTimerCreate("periodic", pdMS_TO_TICKS(10), pdTRUE, (void *) 1, periodicCallback);

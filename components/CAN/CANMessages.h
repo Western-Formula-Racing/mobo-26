@@ -88,3 +88,10 @@ typedef struct{
   int16_t INV_VAB_Vd_Voltage;
   int16_t INV_VBC_Vq_Voltage;
 } InverterVoltageInfo_m;
+
+typedef struct{
+  int16_t INV_DC_Bus_Current;
+  int16_t INV_Phase_C_Current;
+  int16_t INV_Phase_B_Current;
+  int16_t INV_Phase_A_Current;
+} InverterCurrentInfo_m;

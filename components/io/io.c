@@ -167,7 +167,8 @@ void analogInputs(){
 // update digital outputs
 void digitalOutputs(){
   gpio_set_level(GPIO_BMS_OK,outputStates[OUTPUTS_BMS_OK]);
-  gpio_set_level(GPIO_PRECH_OK,outputStates[OUTPUTS_PRECH_OK]);
+  // gpio_set_level(GPIO_PRECH_OK,outputStates[OUTPUTS_PRECH_OK]);
+  gpio_set_level(GPIO_PRECH_OK,1);
   gpio_set_level(GPIO_RED_LED,outputStates[OUTPUTS_RED_LED]);
   gpio_set_level(GPIO_GREEN_LED,outputStates[OUTPUTS_GREEN_LED]);
 }

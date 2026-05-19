@@ -13,6 +13,8 @@ enum canID{
   id_packInfo = 1057,
   id_BMSCurrentLimit = 514,
   id_ElconLimits = 403105268,
+  id_InverterCurrentInfo = 166,
+  id_SOCRESET = 2005,
 };
 
 typedef struct {
@@ -33,6 +35,7 @@ void initCAN();
 void canTxPeriodic();
 void printCANInfo();
 uint32_t getMaxCanTimeout();
+float getInverterCurrent(void);
 
 union CANBuffer_u{
   uint8_t array[8];
@@ -44,6 +47,7 @@ union CANBuffer_u{
   BMSVoltages_m BMSVoltages;
   BMSTemperatures_m BMSTemperatures;
   TORCHFault_m TORCHFault;
+  InverterCurrentInfo_m InverterCurrentInfo;
   #ifdef INVERTER_PRECHARGE
   InverterVoltageInfo_m InverterVoltageInfo;
   #endif
