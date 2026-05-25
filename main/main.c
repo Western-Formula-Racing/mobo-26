@@ -17,7 +17,7 @@ void app_main() {
   esp_log_level_set("statemachine", CONFIG_LOG_MAXIMUM_LEVEL);
   
   //init functions go here
-  initIO();
+  initIO(); 
   initCAN();
 
   //tempsense init 

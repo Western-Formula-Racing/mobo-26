@@ -1,4 +1,4 @@
-#include "freeRTOS/FreeRTOS.h"
+#include "freertos/FreeRTOS.h"
 
 // TX message definitions
 
@@ -31,8 +31,8 @@ typedef struct{
   uint8_t AMS : 1;
   uint8_t BSPD : 1;
   uint8_t Latch : 1;
-  uint8_t AirN: 1;
-  uint8_t HVActive : 3;
+  uint8_t AIRN : 1;
+  uint8_t AIRP : 3;
   uint8_t SOC_lo;
   uint8_t SOC_hi;
   uint8_t packStatus;
@@ -70,3 +70,21 @@ typedef struct{
   uint8_t t4_lo;
   uint8_t t4_hi;
 } BMSTemperatures_m;
+
+typedef struct{
+  uint8_t moduleID;
+  uint8_t faultCode;
+  uint8_t spare1;
+  uint8_t spare2;
+  uint8_t spare3;
+  uint8_t spare4;
+  uint8_t spare5;
+  uint8_t spare6;
+} TORCHFault_m;
+
+typedef struct{
+  int16_t INV_DC_Bus_Voltage;
+  int16_t INV_Output_Voltage;
+  int16_t INV_VAB_Vd_Voltage;
+  int16_t INV_VBC_Vq_Voltage;
+} InverterVoltageInfo_m;

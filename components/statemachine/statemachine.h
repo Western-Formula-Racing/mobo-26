@@ -2,12 +2,13 @@
 #include "freertos/FreeRTOS.h"
 
 enum state_e {
-  IDLE,             // LV on 
-  PRECHARGE,        // check for precharge complete
-  HV_ACTIVE,        // HV Active, precharge complete
-  CHARGING,         // On chargecart and charging
-  CHARGE_COMPLETE,  // Charging complete, "limp" mode
-  FAULT             // AMS Fault raised
+  IDLE,             // LV on 0
+  PLACEHOLDER,    
+  PRECHARGE,
+  HV_ACTIVE,        // HV Active, precharge complete 3
+  CHARGING,         // On chargecart and charging 4 
+  CHARGE_COMPLETE,  // Charging complete, "limp" mode 5
+  FAULT             // AMS Fault raised 6
 };
 
 enum error_e {
@@ -28,7 +29,7 @@ enum error_e {
   CRCFAIL,        //LTC6813 repeating CRC fail
   OVERCURRENT,    //Overcurrent fail
   CANTIMEOUT,     //Can Timeout fail
-  CANERROR,       //CAN errors > 96
+  CANERROR,       //CAN bus tried restarting >MAX_RECOVERY_ATTEMPTS times
   PRECHARGE_FAIL   //Precharge took longer than PRECHARGE_TIMEOUT
 };
 
@@ -37,8 +38,13 @@ typedef struct{
   enum state_e currentState;
   enum state_e lastState;
   uint64_t prechargeStartTime;
+  int errorIndex; // which cell/thermistor raised error (if applicable)
+  int errorModule; // which module raised the error
+  int timeout_length;
 } state_t;
 
 extern state_t moboState;
 
 void stateMachinePeriodic();
+void raiseTorchError(enum error_e error, int module);
+void printFault();
