@@ -1,55 +1,92 @@
 #include "tempsense.h"
+#include "esp_log.h"
+
+static const char *TAG = "tempsense";
+static int tempCount = 0;
+TempStatus_t tempStatus = {0};
 
 void scanDevices(){
-    size_t addr_count  = 5;
+    // Scan up to the maximum capacity of our array
+    size_t addr_count = MAX_SENSOR_SLOTS;
     
+    esp_err_t err = ds18x20_scan_devices(GPIO_ONE_WIRE, tempStatus.address, addr_count, &tempStatus.found);
+    
+    if (err != ESP_OK) {
+        ESP_LOGE(TAG, "1-Wire Scan Failed completely");
+        tempStatus.found = 0;
+        return;
+    }
 
-    ESP_ERROR_CHECK(ds18x20_scan_devices(GPIO_ONE_WIRE, tempStatus.address, addr_count, &tempStatus.found));
-    // Worthwhile rerunning fqunction if all 5 devices are not found? 
-};
+    ESP_LOGI(TAG, "Found %d temperature sensor(s).", tempStatus.found);
+}
 
 void writeScratch() {
+    uint8_t buffer[3] = {
+        0b00111111, // 11-bit resolution
+        0b01000001, // 65 deg Thresh
+        0b00001010  // 10 deg Thresh
+    };
 
-    int i;
-    uint8_t buffer[3];
-    buffer[0] = 0b0101111; //11-bit resolution
-    buffer [1] = 0b1000001; //65 deg
-    buffer [2] = 0b00001010; //10 deg
-
-    //configuring all 5 devices
-    for(i=0;i<5;i++){
+    //Writing to the found sensors
+    for (int i = 0; i < tempStatus.found; i++) {
         ESP_ERROR_CHECK(ds18x20_write_scratchpad(GPIO_ONE_WIRE, tempStatus.address[i], buffer));
     }
-};
+}
 
 void measureTemp() {
-    
-    bool wait = false;
 
-    ESP_ERROR_CHECK(ds18x20_measure(GPIO_ONE_WIRE, DS18X20_ANY, wait)); //how do I 1) run this function synchronously 2) know when the function is complete
-    tempStatus.tempFlag = true;
-
-};
-
-
-
+    esp_err_t err = ds18x20_measure(GPIO_ONE_WIRE, DS18X20_ANY, false); //Broadcasting measure temp function
+    if (err == ESP_OK) {
+        tempStatus.tempFlag = true; 
+    }
+}
 
 void readTemp() {
-    
-    int i = 0;
-    for(i=0;i<5;i++){
+    int consecutive_errors = 0;
 
-        esp_err_t err = ds18x20_read_temperature(GPIO_ONE_WIRE, tempStatus.address[i], &tempStatus.temp[i]);
-
-        if (err!=ESP_OK){
-            tempStatus.temp[i] = -999;
-            tempStatus.tempFlag = false;
-
+    for (int i = 0; i < MAX_SENSOR_SLOTS; i++) {
+        if (i < tempStatus.found) {
+            esp_err_t err = ds18x20_read_temperature(GPIO_ONE_WIRE, tempStatus.address[i], &tempStatus.temp[i]);
+            if (err != ESP_OK) {
+                tempStatus.temp[i] = -999.0; // Sensor read fault
+            }
+        } else {
+            tempStatus.temp[i] = -888.0; // Filling emmpty slots
         }
-        
-
     }
-    tempStatus.tempFlag = false;
 
-};
+}
+void tempSensePeriodic() {
+    if (tempStatus.found == 0) {
+    //'rescan' the sensors
+        if (tempCount >= 500) { // Try to find sensors every 5 seconds (10ms*500 loops)      
+            scanDevices(); 
+        if (tempStatus.found > 0) {
+            writeScratch(); //write to the scratch now, that sensors have been located
+        }
+        tempCount = 0;
+    }
+    } else {
+    if (tempStatus.tempFlag == false) {
+        if (tempCount >= 500) { //5 second bus downtime, to restore IC voltage
+            measureTemp(); // Start conversion asynchronously
+            tempCount = 0;
+        }
+    } else {
+            if (tempCount >= 50) { // Wait 500ms for hardware conversion
+                onewire_depower(GPIO_ONE_WIRE);
+                readTemp(); 
 
+                for(int i = 0; i < tempStatus.found; i++) {
+                    printf(">temp%d:%.2f\n", i + 1, tempStatus.temp[i]); //can i print f in this function? 
+                }
+
+            tempStatus.tempFlag = false; //back to measure mode
+            tempCount = 0; 
+
+            }
+        }
+    }
+
+    tempCount++;
+}

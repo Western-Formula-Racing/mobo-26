@@ -21,10 +21,6 @@ void app_main() {
   initIO(); 
   initCAN();
 
-  //tempsense init 
-  scanDevices();
-  writeScratch();
-  measureTemp(); 
   
   //create periodic function timer
   TimerHandle_t periodicTimer = xTimerCreate("periodic", pdMS_TO_TICKS(10), pdTRUE, (void *) 1, periodicCallback);

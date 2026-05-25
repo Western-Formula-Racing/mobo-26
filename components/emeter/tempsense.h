@@ -4,17 +4,20 @@
 #include "hw_define.h"
 #include "ds18x20.h"
 #include "onewire.h"
-
+#define MAX_SENSOR_SLOTS 5  // Physical maximum your board supports
 
 void scanDevices();
 void writeScratch();
 void measureTemp();
 void readTemp();
+void tempSensePeriodic(); 
 
-static struct {
-    float temp[5];
-    bool tempFlag; // 'True' bus measuring-state 'False' bus idle/fault state
-    size_t found; 
-    onewire_addr_t address[5]; 
-}tempStatus;
+typedef struct {
+    ds18x20_addr_t address[MAX_SENSOR_SLOTS];
+    float temp[MAX_SENSOR_SLOTS];
+    size_t found;
+    bool tempFlag; //temperature 'ready-to-measure' indicator (1 is ready, 0 is measuring)
+}TempStatus_t;
+
+extern TempStatus_t tempStatus;
 
