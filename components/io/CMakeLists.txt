@@ -1,1 +1,1 @@
-idf_component_register(SRCS "IO.c" INCLUDE_DIRS "." "../../include" REQUIRES "driver")
+idf_component_register(SRCS "io.c" "IO.c" INCLUDE_DIRS "." "../../include" REQUIRES "driver")
