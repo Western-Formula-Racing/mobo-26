@@ -16,6 +16,5 @@ static struct {
     bool tempFlag; // 'True' bus measuring-state 'False' bus idle/fault state
     size_t found; 
     onewire_addr_t address[5]; 
-
-} tempStatus;
+}tempStatus;
 

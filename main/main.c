@@ -4,6 +4,7 @@
 #include "CAN.h"
 #include "io.h"
 #include "periodic.h"
+#include "tempsense.h"
 
 
 // Code entry point
