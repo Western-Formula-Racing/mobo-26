@@ -28,7 +28,7 @@ void printInfo(){
   //ESP_LOGI(TAG,"> Digital Outputs: BMS_OK: %d | PRECH_OK: %d | RED_LED: %d | GREEN_LED: %d",outputStates[OUTPUTS_BMS_OK],outputStates[OUTPUTS_PRECH_OK],outputStates[OUTPUTS_RED_LED],outputStates[OUTPUTS_GREEN_LED]);
   printf(">m1_timeout,Module Timeouts:%d \n>m2_timeout,Module Timeouts:%d \n>m3_timeout,Module Timeouts:%d \n>m4_timeout,Module Timeouts:%d \n>m5_timeout,Module Timeouts:%d \n",modules[0].timeout,modules[1].timeout,modules[2].timeout,modules[3].timeout,modules[4].timeout);
   printf(">inverter_voltage: %.2f\n", inverterVoltage);
-  printf(">inverter_timeout:%ld\n", getMaxCanTimeout());
+  printf(">inverter_timeout:%ld\n", getMaxInverterTimeout());
   printCANInfo();
 }
 
