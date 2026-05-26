@@ -149,7 +149,7 @@ void errorCheck(){
     moboState.timeout_length = getMaxModuleTimeout(&module);
     ESP_LOGE(TAG, "Fault: Module CAN Timeout");
   }
-  else if((moboState.currentState != CHARGING && moboState.currentState != CHARGE_COMPLETE)  && getMaxCanTimeout() > MAX_CAN_TIMEOUT){
+  else if((inCar && moboState.currentState != CHARGING && moboState.currentState != CHARGE_COMPLETE)  && getMaxCanTimeout() > MAX_CAN_TIMEOUT){
     moboState.error = CANTIMEOUT;
     moboState.lastState = moboState.currentState;
     moboState.currentState = FAULT;

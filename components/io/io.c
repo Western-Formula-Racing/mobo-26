@@ -23,7 +23,6 @@ static const char* TAG = "io";
 static uint16_t adcSampleBuffers[ANALOG_COUNT][ADC_SAMPLE_COUNT] = {{0}};
 static uint8_t adcSampleIndex[ANALOG_COUNT] = {0};
 
-// --- TLA2518 Pure C Driver Functions ---
 
 void tla2518_write_register(uint8_t address, uint8_t value) {
   uint8_t tx_buffer[3] = {TLA_CMD_WRITE, address, value};
@@ -52,8 +51,6 @@ uint16_t tla2518_read_channel(uint8_t channel) {
   uint16_t val = ((uint16_t)rx_buffer[0] << 4) | (rx_buffer[1] >> 4);
   return val;
 }
-
-// --- End TLA2518 Driver Functions ---
 
 // initilaize digital input/output pins 
 void initIO(){
