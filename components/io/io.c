@@ -14,6 +14,8 @@ float   analogVoltages[ANALOG_COUNT] = {};
 uint8_t outputStates[OUTPUTS_COUNT] = {};
 spi_device_handle_t adcHandle;
 
+const uint8_t channels[ANALOG_COUNT] = {0, 1, 3};
+
 static const char* TAG = "io"; 
 
 // ADC filtering config
@@ -136,32 +138,34 @@ void digitalInputs(){
   }
 }
 
+// Moving analog input code into another function
+float ADC_read_filter(enum analog_e channel) {
+  uint8_t ADC_channel = channels[channel];
+
+  //read channel
+  uint16_t rawValue1 = tla2518_read_channel(ADC_channel); 
+
+
+  adcSampleBuffers[ADC_channel][adcSampleIndex[ADC_channel]] = rawValue1;
+  adcSampleIndex[ADC_channel] = (adcSampleIndex[ADC_channel] + 1) % ADC_SAMPLE_COUNT;
+
+  uint32_t sum = 0;
+  for(int i = 0; i < ADC_SAMPLE_COUNT; i++){
+    sum += adcSampleBuffers[ADC_channel][i];
+  }
+
+  uint16_t avgRaw = (uint16_t)(sum / ADC_SAMPLE_COUNT);
+
+  return ((float)avgRaw / 4095.0f) * 5.0f;
+}
+
+
+
 // update analog inputs
 void analogInputs(){
-  // Read channels sequentially using the robust C function
-  uint16_t rawValue1 = tla2518_read_channel(0); 
-  uint16_t rawValue2 = tla2518_read_channel(1); 
-
-  // Push new samples into circular buffers and compute moving average
-  const float adcMax = 4095.0f; // 12-bit max (2^12 - 1)
-  uint32_t sum0 = 0;
-  uint32_t sum1 = 0;
-
-  // channel 0
-  adcSampleBuffers[0][adcSampleIndex[0]] = rawValue1;
-  adcSampleIndex[0] = (adcSampleIndex[0] + 1) % ADC_SAMPLE_COUNT;
-  for(int i=0;i<ADC_SAMPLE_COUNT;i++) sum0 += adcSampleBuffers[0][i];
-  uint16_t avgRaw0 = (uint16_t)(sum0 / ADC_SAMPLE_COUNT);
-
-  // channel 1
-  adcSampleBuffers[1][adcSampleIndex[1]] = rawValue2;
-  adcSampleIndex[1] = (adcSampleIndex[1] + 1) % ADC_SAMPLE_COUNT;
-  for(int i=0;i<ADC_SAMPLE_COUNT;i++) sum1 += adcSampleBuffers[1][i];
-  uint16_t avgRaw1 = (uint16_t)(sum1 / ADC_SAMPLE_COUNT);
-
-  // Convert averaged ADC counts to voltage assuming 5.0V reference
-  analogVoltages[ANALOG_CURSENSE] = ((float)avgRaw0 / adcMax) * 5.0f;
-  analogVoltages[ANALOG_VSENSE] = ((float)avgRaw1 / adcMax) * 5.0f;
+  for(int i =0; i<ANALOG_COUNT;i++){
+    analogVoltages[i] = ADC_read_filter((enum analog_e)i);
+  }
 }
 
 // update digital outputs
