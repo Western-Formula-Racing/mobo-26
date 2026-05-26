@@ -21,11 +21,10 @@ void scanDevices(){
 }
 
 void writeScratch() {
-    uint8_t buffer[3] = {
-        0b00111111, // 11-bit resolution
-        0b01000001, // 65 deg Thresh
-        0b00001010  // 10 deg Thresh
-    };
+    uint8_t buffer[3];
+    buffer[2] = 65;
+    buffer[1] = 10;
+    buffer[0] = 0b01111111; //12-bit resolution
 
     //Writing to the found sensors
     for (int i = 0; i < tempStatus.found; i++) {
@@ -42,7 +41,6 @@ void measureTemp() {
 }
 
 void readTemp() {
-    int consecutive_errors = 0;
 
     for (int i = 0; i < MAX_SENSOR_SLOTS; i++) {
         if (i < tempStatus.found) {
@@ -77,10 +75,7 @@ void tempSensePeriodic() {
                 onewire_depower(GPIO_ONE_WIRE);
                 readTemp(); 
 
-                for(int i = 0; i < tempStatus.found; i++) {
-                    printf(">temp%d:%.2f\n", i + 1, tempStatus.temp[i]); //can i print f in this function? 
-                }
-
+            tempStatus.printReady = 1;
             tempStatus.tempFlag = false; //back to measure mode
             tempCount = 0; 
 

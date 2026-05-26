@@ -47,5 +47,10 @@ void periodicCallback(TimerHandle_t xTimer){
   }
 
   tempSensePeriodic();  //Run periodic functions
-
+  if (tempStatus.printReady == 1){
+   for(int i = 0; i < tempStatus.found; i++) {
+      printf(">temp%d:%.2f\n", i + 1, tempStatus.temp[i]); //can i print f in this function? 
+    }
+  }
+  tempStatus.printReady = 0;
 }

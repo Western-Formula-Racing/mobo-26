@@ -17,6 +17,7 @@ typedef struct {
     float temp[MAX_SENSOR_SLOTS];
     size_t found;
     bool tempFlag; //temperature 'ready-to-measure' indicator (1 is ready, 0 is measuring)
+    bool printReady;
 }TempStatus_t;
 
 extern TempStatus_t tempStatus;
