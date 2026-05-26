@@ -140,14 +140,15 @@ void digitalInputs(){
 
 // Moving analog input code into another function
 float ADC_read_filter(enum analog_e channel) {
+
   uint8_t ADC_channel = channels[channel];
 
   //read channel
   uint16_t rawValue1 = tla2518_read_channel(ADC_channel); 
 
 
-  adcSampleBuffers[ADC_channel][adcSampleIndex[ADC_channel]] = rawValue1;
-  adcSampleIndex[ADC_channel] = (adcSampleIndex[ADC_channel] + 1) % ADC_SAMPLE_COUNT;
+  adcSampleBuffers[channel][adcSampleIndex[channel]] = rawValue1;
+  adcSampleIndex[channel] = (adcSampleIndex[channel] + 1) % ADC_SAMPLE_COUNT;
 
   uint32_t sum = 0;
   for(int i = 0; i < ADC_SAMPLE_COUNT; i++){
