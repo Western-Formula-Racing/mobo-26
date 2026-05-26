@@ -24,8 +24,7 @@ void writeScratch() {
     uint8_t buffer[3];
     buffer[2] = 65;
     buffer[1] = 10;
-    buffer[0] = 0b01111111; //12-bit resolution
-
+    buffer[0] = 0b01111111; //12-bit resolution; 0b01111111
     //Writing to the found sensors
     for (int i = 0; i < tempStatus.found; i++) {
         ESP_ERROR_CHECK(ds18x20_write_scratchpad(GPIO_ONE_WIRE, tempStatus.address[i], buffer));
