@@ -29,6 +29,7 @@ void printInfo(){
   printf(">m1_timeout,Module Timeouts:%d \n>m2_timeout,Module Timeouts:%d \n>m3_timeout,Module Timeouts:%d \n>m4_timeout,Module Timeouts:%d \n>m5_timeout,Module Timeouts:%d \n",modules[0].timeout,modules[1].timeout,modules[2].timeout,modules[3].timeout,modules[4].timeout);
   printf(">inverter_voltage: %.2f\n", inverterVoltage);
   printf(">inverter_timeout:%ld\n", getMaxInverterTimeout());
+  printf(">inCar_status:%d\n", inCar);
   printCANInfo();
 }
 
