@@ -32,7 +32,7 @@ extern float inverterVoltage;
 void initCAN();
 void canTxPeriodic();
 void printCANInfo();
-uint32_t getMaxCanTimeout();
+uint32_t getMaxInverterTimeout();
 
 union CANBuffer_u{
   uint8_t array[8];

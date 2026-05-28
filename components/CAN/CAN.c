@@ -424,7 +424,7 @@ void printCANInfo(){
   }
 }
 
-uint32_t getMaxCanTimeout(){
+uint32_t getMaxInverterTimeout(){
   //TODO: implement better timeout
   return inverterTimeout;
 }

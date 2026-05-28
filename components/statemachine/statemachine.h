@@ -28,7 +28,7 @@ enum error_e {
   ADOL,           //LTC6813 ADOL fail
   CRCFAIL,        //LTC6813 repeating CRC fail
   OVERCURRENT,    //Overcurrent fail
-  CANTIMEOUT,     //Can Timeout fail
+  CANTIMEOUT,   //Can Inverter Timeout fail
   CANERROR,       //CAN bus tried restarting >MAX_RECOVERY_ATTEMPTS times
   PRECHARGE_FAIL   //Precharge took longer than PRECHARGE_TIMEOUT
 };
