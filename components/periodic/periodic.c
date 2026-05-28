@@ -5,9 +5,11 @@
 #include "CAN.h"
 #include "statemachine.h"
 #include "BMS.h"
+#include "tempsense.h"
 
 static const char* TAG = "periodic";
 int periodicCount = 0;
+
 
 void printInfo(){
   // teleplot io
@@ -45,4 +47,12 @@ void periodicCallback(TimerHandle_t xTimer){
     printInfo();
     periodicCount = 0;
   }
+
+  tempSensePeriodic();  //Run periodic functions
+  if (tempStatus.printReady == 1){
+   for(int i = 0; i < tempStatus.found; i++) {
+      printf(">temp%d:%.2f\n", i + 1, tempStatus.temp[i]);  
+    }
+  }
+  tempStatus.printReady = 0;
 }

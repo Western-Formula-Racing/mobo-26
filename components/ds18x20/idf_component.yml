@@ -1,0 +1,32 @@
+dependencies:
+  esp-idf-lib/esp_idf_lib_helpers:
+    version: '*'
+  esp-idf-lib/onewire:
+    version: '*'
+description: Driver for DS18B20/DS18S20 families of 1-Wire temperature sensor ICs
+discussion: https://github.com/esp-idf-lib/core/discussions
+documentation: https://esp-idf-lib.github.io/ds18x20/
+files:
+  exclude:
+  - docs/**/*
+issues: https://github.com/esp-idf-lib/ds18x20/issues
+license: BSD-3
+maintainers:
+- Ruslan V. Uss (@UncleRus) <unclerus@gmail.com>
+repository: git://github.com/esp-idf-lib/ds18x20.git
+repository_info:
+  commit_sha: 5cd908dd8828df0139db1f6bdd9e0657f284c2cd
+  path: .
+targets:
+- esp32
+- esp32c2
+- esp32c3
+- esp32c5
+- esp32c6
+- esp32c61
+- esp32h2
+- esp32p4
+- esp32s2
+- esp32s3
+url: https://github.com/esp-idf-lib/core
+version: 1.2.8

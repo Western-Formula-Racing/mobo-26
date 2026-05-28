@@ -1,0 +1,9 @@
+dependencies:
+  esp-idf-lib/ds18x20:
+    version: '*'
+  esp-idf-lib/esp_idf_lib_helpers:
+    version: '*'
+  esp-idf-lib/onewire:
+    version: '*'
+description: multi
+version: 1.0.0
