@@ -98,7 +98,7 @@ void initIO(){
   ESP_ERROR_CHECK(spi_bus_add_device(SPI2_HOST, &adcCfg, &adcHandle));
   
   // Force all channels to be analog inputs as per the library config
-  tla2518_write_register(TLA_PIN_CFG, 4);
+  tla2518_write_register(TLA_PIN_CFG, 5);
 }
 
 // update digital inputs
@@ -149,7 +149,7 @@ float ADC_read_filter(enum analog_e channel) {
 
   uint32_t sum = 0;
   for(int i = 0; i < ADC_SAMPLE_COUNT; i++){
-    sum += adcSampleBuffers[ADC_channel][i];
+    sum += adcSampleBuffers[channel][i];
   }
 
   uint16_t avgRaw = (uint16_t)(sum / ADC_SAMPLE_COUNT);
