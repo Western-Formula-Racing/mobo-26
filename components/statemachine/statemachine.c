@@ -144,7 +144,7 @@ void errorCheck(){
   } else if(getMaxModuleTimeout(&module) > MAX_CAN_TIMEOUT ){
     moboState.error = CANTIMEOUT_MODULES;
     moboState.lastState = moboState.currentState;
-    moboState.currentState = FAULT;
+    moboState.currentState = FAULT; //revise this state 
     moboState.errorModule = module;
     moboState.timeout_length = getMaxModuleTimeout(&module);
     ESP_LOGE(TAG, "Fault: Module CAN Timeout");
