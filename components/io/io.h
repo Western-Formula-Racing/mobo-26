@@ -12,9 +12,6 @@
 // VBUS = VADC/0.0109
 #define Vsense_VtoV(v) (v)/0.0109
 
-
-
-
 enum digitalInputs_e{
   IMD_RELAY,
   BSPD_RELAY,
