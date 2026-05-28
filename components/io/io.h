@@ -26,10 +26,10 @@ enum digitalInputs_e{
 };
 
 enum analog_e{
-  ANALOG_CURSENSE,
-  ANALOG_3V3,
-  ANALOG_VSENSE,
-  ANALOG_COUNT,
+  ANALOG_CURSENSE = 0,
+  ANALOG_3V3 = 1,
+  ANALOG_VSENSE = 3,
+  ANALOG_COUNT = 3,
 };
 
 enum digitalOutputs_e{
