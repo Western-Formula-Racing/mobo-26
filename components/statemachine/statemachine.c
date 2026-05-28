@@ -142,7 +142,7 @@ void errorCheck(){
     moboState.currentState = FAULT;
     ESP_LOGE(TAG, "Fault: OVERCURRENT");
   } else if(getMaxModuleTimeout(&module) > MAX_CAN_TIMEOUT ){
-    moboState.error = CANTIMEOUT;
+    moboState.error = CANTIMEOUT_MODULES;
     moboState.lastState = moboState.currentState;
     moboState.currentState = FAULT;
     moboState.errorModule = module;
@@ -150,7 +150,7 @@ void errorCheck(){
     ESP_LOGE(TAG, "Fault: Module CAN Timeout");
   }
   else if((inCar && moboState.currentState != CHARGING && moboState.currentState != CHARGE_COMPLETE)  && getMaxInverterTimeout() > MAX_CAN_TIMEOUT){
-    moboState.error = CANTIMEOUT;
+    moboState.error = CANTIMEOUT_INVERTER;
     moboState.lastState = moboState.currentState;
     moboState.currentState = FAULT;
     moboState.errorModule = 7;
