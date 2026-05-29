@@ -14,6 +14,19 @@ typedef struct{
 } packInfo_m;
 
 typedef struct{
+  uint16_t HV_SENSE;
+  uint16_t CURR_SENSE;
+} analogReadings_m;
+
+typedef struct{
+  uint8_t TEMPSENSE_1;
+  uint8_t TEMPSENSE_2;
+  uint8_t TEMPSENSE_3;
+  uint8_t TEMPSENSE_4;
+  uint8_t TEMPSENSE_5;
+} oneWireTemps_m;
+
+typedef struct{
   uint8_t maxChargeVoltage_lo;
   uint8_t maxChargeVoltage_hi;
   uint8_t maxChargeCurrent_lo;

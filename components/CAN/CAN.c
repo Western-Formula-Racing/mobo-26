@@ -10,6 +10,7 @@
 #include "io.h"
 #include "statemachine.h"
 #include "config.h"
+#include "tempsense.h"
 
 static const char* TAG = "CAN";
 
@@ -19,8 +20,10 @@ union CANBuffer_u canTxBuffer = {.data=0};
 
 uint8_t packStatusData[8];
 uint8_t packInfoData[8];
+uint8_t analogReadingData[8];
 uint8_t bmsCurrentLimitData[8];
 uint8_t elconLimitsData[8];
+uint8_t oneWireTempsData[8];
 
 twai_frame_t packStatusMsg = {
   .header.id = id_packStatus,
@@ -30,6 +33,25 @@ twai_frame_t packStatusMsg = {
   .buffer_len = 8,
   .buffer = packStatusData,
 };
+
+twai_frame_t analogReadingsMsg = {
+  .header.id = id_analogReading,
+  .header.ide = false,
+  .header.rtr = false,
+  .header.dlc = 8,
+  .buffer_len = 8,
+  .buffer = analogReadingData,
+};
+
+twai_frame_t oneWireTempsMsg = {
+  .header.id = id_analogReading,
+  .header.ide = false,
+  .header.rtr = false,
+  .header.dlc = 8,
+  .buffer_len = 8,
+  .buffer = oneWireTempsData,
+};
+
 
 twai_frame_t packInfoMsg = {
   .header.id = id_packInfo,
@@ -221,6 +243,40 @@ void canTask(void *arg)
     err = twai_node_transmit(mobo_node_handle, &packInfoMsg, pdMS_TO_TICKS(10));
     if (err != ESP_OK) {
       ESP_LOGE(TAG, "PackInfo TX failed: %d\n", (int)err);
+    }
+
+    //analogReadings
+    uint16_t HV_VOL = f2i_CAN(Vsense_VtoV(analogVoltages[ANALOG_VSENSE]),10,0);
+    int16_t CUR_AMP = f2i_CAN(Cursense_VtoA(analogVoltages[ANALOG_CURSENSE]),10,0);
+    
+    canTxBuffer.analogReadings.HV_SENSE = HV_VOL;
+    canTxBuffer.analogReadings.CURR_SENSE = CUR_AMP;
+
+    memcpy(analogReadingsMsg.buffer, canTxBuffer.array, 8);
+    
+    err = twai_node_transmit(mobo_node_handle, &analogReadingsMsg, pdMS_TO_TICKS(10));
+    if (err != ESP_OK) {
+      ESP_LOGE(TAG, "analogReadings TX failed: %d\n", (int)err);
+    }
+
+    //OneWireTemp Readings
+    int8_t tSense1 = f2i_CAN(tempStatus.temp[0],10,0);
+    int8_t tSense2 = f2i_CAN(tempStatus.temp[1],10,0);
+    int8_t tSense3 = f2i_CAN(tempStatus.temp[2],10,0);
+    int8_t tSense4 = f2i_CAN(tempStatus.temp[3],10,0);
+    int8_t tSense5 = f2i_CAN(tempStatus.temp[4],10,0);
+
+    canTxBuffer.oneWireTemps.TEMPSENSE_1 = tSense1;
+    canTxBuffer.oneWireTemps.TEMPSENSE_2 = tSense2;
+    canTxBuffer.oneWireTemps.TEMPSENSE_3 = tSense3;
+    canTxBuffer.oneWireTemps.TEMPSENSE_4 = tSense4;
+    canTxBuffer.oneWireTemps.TEMPSENSE_5 = tSense5;
+
+    memcpy(oneWireTempsMsg.buffer, canTxBuffer.array, 8);
+    
+    err = twai_node_transmit(mobo_node_handle, &oneWireTempsMsg, pdMS_TO_TICKS(10));
+    if (err != ESP_OK) {
+      ESP_LOGE(TAG, "oneWireTemps TX failed: %d\n", (int)err);
     }
 
     // //BMS Current limit to Cascadia Inverter
