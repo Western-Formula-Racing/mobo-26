@@ -44,7 +44,7 @@ twai_frame_t analogReadingsMsg = {
 };
 
 twai_frame_t oneWireTempsMsg = {
-  .header.id = id_analogReading,
+  .header.id = id_oneWireTemp,
   .header.ide = false,
   .header.rtr = false,
   .header.dlc = 8,
@@ -246,7 +246,7 @@ void canTask(void *arg)
     }
 
     //analogReadings
-    uint16_t HV_VOL = f2i_CAN(Vsense_VtoV(analogVoltages[ANALOG_VSENSE]),10,0);
+    int16_t HV_VOL = f2i_CAN(Vsense_VtoV(analogVoltages[ANALOG_VSENSE]),10,0);
     int16_t CUR_AMP = f2i_CAN(Cursense_VtoA(analogVoltages[ANALOG_CURSENSE]),10,0);
     
     canTxBuffer.analogReadings.HV_SENSE = HV_VOL;
