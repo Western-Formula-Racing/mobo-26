@@ -136,11 +136,11 @@ void errorCheck(){
     moboState.errorIndex = errIndex;
     moboState.errorModule = module;
     ESP_LOGE(TAG, "Fault: UNDERVOLTAGE");
-  } else if (Cursense_VtoA(analogVoltages[ANALOG_CURSENSE]) > CURRENT_LIMIT){
-    moboState.error = OVERCURRENT;
-    moboState.lastState = moboState.currentState;
-    moboState.currentState = FAULT;
-    ESP_LOGE(TAG, "Fault: OVERCURRENT");
+  // } else if (Cursense_VtoA(analogVoltages[ANALOG_CURSENSE]) > CURRENT_LIMIT){
+  //   moboState.error = OVERCURRENT;
+  //   moboState.lastState = moboState.currentState;
+  //   moboState.currentState = FAULT;
+  //   ESP_LOGE(TAG, "Fault: OVERCURRENT");
   } else if(getMaxModuleTimeout(&module) > MAX_CAN_TIMEOUT ){
     moboState.error = CANTIMEOUT_MODULES;
     moboState.lastState = moboState.currentState;
