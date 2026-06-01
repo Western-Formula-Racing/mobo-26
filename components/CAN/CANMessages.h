@@ -19,12 +19,15 @@ typedef struct{
 } analogReadings_m;
 
 typedef struct{
-  uint8_t TEMPSENSE_1;
-  uint8_t TEMPSENSE_2;
-  uint8_t TEMPSENSE_3;
-  uint8_t TEMPSENSE_4;
-  uint8_t TEMPSENSE_5;
-} oneWireTemps_m;
+  int16_t TEMPSENSE_1;
+  int16_t TEMPSENSE_2;
+  int16_t TEMPSENSE_3;
+  int16_t TEMPSENSE_4;
+} oneWireTemps_m_A;
+
+typedef struct{
+  int16_t TEMPSENSE_5;
+} oneWireTemps_m_B;
 
 typedef struct{
   uint8_t maxChargeVoltage_lo;

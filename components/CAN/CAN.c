@@ -23,7 +23,9 @@ uint8_t packInfoData[8];
 uint8_t analogReadingData[8];
 uint8_t bmsCurrentLimitData[8];
 uint8_t elconLimitsData[8];
-uint8_t oneWireTempsData[8];
+uint8_t oneWireTempsData_A[8];
+uint8_t oneWireTempsData_B[8];
+
 
 twai_frame_t packStatusMsg = {
   .header.id = id_packStatus,
@@ -43,13 +45,22 @@ twai_frame_t analogReadingsMsg = {
   .buffer = analogReadingData,
 };
 
-twai_frame_t oneWireTempsMsg = {
-  .header.id = id_oneWireTemp,
+twai_frame_t oneWireTempsMsg_A = {
+  .header.id = id_oneWireTemp_A,
   .header.ide = false,
   .header.rtr = false,
   .header.dlc = 8,
   .buffer_len = 8,
-  .buffer = oneWireTempsData,
+  .buffer = oneWireTempsData_A,
+};
+
+twai_frame_t oneWireTempsMsg_B = {
+  .header.id = id_oneWireTemp_B,
+  .header.ide = false,
+  .header.rtr = false,
+  .header.dlc = 8,
+  .buffer_len = 8,
+  .buffer = oneWireTempsData_B,
 };
 
 
@@ -259,26 +270,36 @@ void canTask(void *arg)
       ESP_LOGE(TAG, "analogReadings TX failed: %d\n", (int)err);
     }
 
-    //OneWireTemp Readings
-    int8_t tSense1 = f2i_CAN(tempStatus.temp[0],10,0);
-    int8_t tSense2 = f2i_CAN(tempStatus.temp[1],10,0);
-    int8_t tSense3 = f2i_CAN(tempStatus.temp[2],10,0);
-    int8_t tSense4 = f2i_CAN(tempStatus.temp[3],10,0);
-    int8_t tSense5 = f2i_CAN(tempStatus.temp[4],10,0);
+    //OneWireTemp Readings 1-4
+    if(tempStatus.found!=0){
+      int16_t tSense1 = f2i_CAN(tempStatus.temp[0],100,0);
+      int16_t tSense2 = f2i_CAN(tempStatus.temp[1],100,0);
+      int16_t tSense3 = f2i_CAN(tempStatus.temp[2],100,0);
+      int16_t tSense4 = f2i_CAN(tempStatus.temp[3],100,0);
 
-    canTxBuffer.oneWireTemps.TEMPSENSE_1 = tSense1;
-    canTxBuffer.oneWireTemps.TEMPSENSE_2 = tSense2;
-    canTxBuffer.oneWireTemps.TEMPSENSE_3 = tSense3;
-    canTxBuffer.oneWireTemps.TEMPSENSE_4 = tSense4;
-    canTxBuffer.oneWireTemps.TEMPSENSE_5 = tSense5;
+      canTxBuffer.oneWireTemps_A.TEMPSENSE_1 = tSense1;
+      canTxBuffer.oneWireTemps_A.TEMPSENSE_2 = tSense2;
+      canTxBuffer.oneWireTemps_A.TEMPSENSE_3 = tSense3;
+      canTxBuffer.oneWireTemps_A.TEMPSENSE_4 = tSense4;
 
-    memcpy(oneWireTempsMsg.buffer, canTxBuffer.array, 8);
-    
-    err = twai_node_transmit(mobo_node_handle, &oneWireTempsMsg, pdMS_TO_TICKS(10));
+      memcpy(oneWireTempsMsg_A.buffer, canTxBuffer.array, 8);
+      
+      err = twai_node_transmit(mobo_node_handle, &oneWireTempsMsg_A, pdMS_TO_TICKS(10));
+      if (err != ESP_OK) {
+        ESP_LOGE(TAG, "oneWireTemps_A TX failed: %d\n", (int)err);
+      }
+  }
+  //OneWireTemp Readings 5
+  if(tempStatus.found!=0){
+    int16_t tSense5 = f2i_CAN(tempStatus.temp[4],100,0);
+    canTxBuffer.oneWireTemps_B.TEMPSENSE_5 = tSense5;
+
+    memcpy(oneWireTempsMsg_B.buffer, canTxBuffer.array, 8);
+    err = twai_node_transmit(mobo_node_handle, &oneWireTempsMsg_B, pdMS_TO_TICKS(10));
     if (err != ESP_OK) {
-      ESP_LOGE(TAG, "oneWireTemps TX failed: %d\n", (int)err);
+      ESP_LOGE(TAG, "oneWireTemps_B TX failed: %d\n", (int)err);
     }
-
+  }
     // //BMS Current limit to Cascadia Inverter
     canTxBuffer.BMSCurrentLimit.BMSChargeCurrent_lo = 10;
     canTxBuffer.BMSCurrentLimit.BMSChargeCurrent_hi = 0;

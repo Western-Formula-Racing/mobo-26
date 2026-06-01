@@ -14,7 +14,9 @@ enum canID{
   id_BMSCurrentLimit = 514,
   id_ElconLimits = 403105268,
   id_analogReading = 1058,
-  id_oneWireTemp = 1059,
+  id_oneWireTemp_A = 1059,
+  id_oneWireTemp_B = 1060,
+
 };
 
 typedef struct {
@@ -41,7 +43,8 @@ union CANBuffer_u{
   uint64_t data;
   packInfo_m packInfo;
   analogReadings_m analogReadings;
-  oneWireTemps_m oneWireTemps;
+  oneWireTemps_m_A oneWireTemps_A;
+  oneWireTemps_m_B oneWireTemps_B;
   elconLimits_m elconLimits;
   packStatus_m packStatus;
   BMSCurrentLimit_m BMSCurrentLimit;
