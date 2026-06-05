@@ -309,8 +309,8 @@ void canTask(void *arg)
     twai_node_transmit(mobo_node_handle, &bmsCurrentLimitMsg,pdMS_TO_TICKS(10));
   }
 
-  // send every 1s
-  if(txCounter>=100){
+  // send every 500ms
+  if(txCounter>=50){
     //charging message
     canTxBuffer.elconLimits.maxChargeVoltage_lo = ((CHARGE_TARGET * 10) & 0xFF00)>>8;
     canTxBuffer.elconLimits.maxChargeVoltage_hi = (CHARGE_TARGET * 10) & 0xFF;
@@ -379,7 +379,7 @@ void initCAN(){
     .bit_timing.bitrate = 500000,  // 500 kbps bitrate
     .bit_timing.sp_permill = 250,   // Sample point at 25% of the bit time
     .bit_timing.ssp_permill = 750,  // Secondary sample point at 75% of the bit time
-    .tx_queue_depth = 5,           // Transmit queue depth set to 5
+    .tx_queue_depth = 20,           // Transmit queue depth set to 20
     .fail_retry_cnt = 1,            // retry tx 1 time on fail
   };
   ESP_ERROR_CHECK(twai_new_node_onchip(&node_config, &mobo_node_handle));
