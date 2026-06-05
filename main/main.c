@@ -4,6 +4,8 @@
 #include "CAN.h"
 #include "io.h"
 #include "periodic.h"
+#include "tempsense.h"
+
 #include "state-of-charge.h"
 
 // Code entry point
@@ -19,6 +21,8 @@ void app_main() {
   //init functions go here
   initIO(); 
   initCAN();
+
+  
   initNVS();
 
   //create periodic function timer

@@ -13,6 +13,10 @@ enum canID{
   id_packInfo = 1057,
   id_BMSCurrentLimit = 514,
   id_ElconLimits = 403105268,
+  id_analogReading = 1058,
+  id_oneWireTemp_A = 1059,
+  id_oneWireTemp_B = 1060,
+
   id_InverterCurrentInfo = 166,
   id_SOCRESET = 2005,
 };
@@ -34,6 +38,7 @@ extern float inverterVoltage;
 void initCAN();
 void canTxPeriodic();
 void printCANInfo();
+uint32_t getMaxInverterTimeout();
 uint32_t getMaxCanTimeout();
 float getInverterCurrent(void);
 
@@ -41,6 +46,9 @@ union CANBuffer_u{
   uint8_t array[8];
   uint64_t data;
   packInfo_m packInfo;
+  analogReadings_m analogReadings;
+  oneWireTemps_m_A oneWireTemps_A;
+  oneWireTemps_m_B oneWireTemps_B;
   elconLimits_m elconLimits;
   packStatus_m packStatus;
   BMSCurrentLimit_m BMSCurrentLimit;

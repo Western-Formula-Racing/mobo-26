@@ -36,3 +36,4 @@
 #define GPIO_MOSI     GPIO_NUM_6
 #define GPIO_CAN_TX   GPIO_NUM_48
 #define GPIO_CAN_RX   GPIO_NUM_47
+#define GPIO_ONE_WIRE GPIO_NUM_35

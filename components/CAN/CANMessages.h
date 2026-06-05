@@ -14,6 +14,22 @@ typedef struct{
 } packInfo_m;
 
 typedef struct{
+  uint16_t HV_SENSE;
+  uint16_t CURR_SENSE;
+} analogReadings_m;
+
+typedef struct{
+  int16_t TEMPSENSE_1;
+  int16_t TEMPSENSE_2;
+  int16_t TEMPSENSE_3;
+  int16_t TEMPSENSE_4;
+} oneWireTemps_m_A;
+
+typedef struct{
+  int16_t TEMPSENSE_5;
+} oneWireTemps_m_B;
+
+typedef struct{
   uint8_t maxChargeVoltage_lo;
   uint8_t maxChargeVoltage_hi;
   uint8_t maxChargeCurrent_lo;
@@ -32,7 +48,7 @@ typedef struct{
   uint8_t BSPD : 1;
   uint8_t Latch : 1;
   uint8_t AIRN : 1;
-  uint8_t HVActive : 3;
+  uint8_t AIRP : 3;
   uint8_t SOC_lo;
   uint8_t SOC_hi;
   uint8_t packStatus;
