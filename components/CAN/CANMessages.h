@@ -49,8 +49,7 @@ typedef struct{
   uint8_t Latch : 1;
   uint8_t AIRN : 1;
   uint8_t AIRP : 3;
-  uint8_t SOC_lo;
-  uint8_t SOC_hi;
+  uint8_t SoC;
   uint8_t packStatus;
   uint8_t fault;
 } packStatus_m;

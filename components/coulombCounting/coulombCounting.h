@@ -6,7 +6,14 @@
 #include "esp_timer.h"
 #include "CAN.h"
 
-static float analog_cursense = 0.0f;
+typedef struct {
+    float current_soc;
+    float last_saved_soc;
+    int64_t last_time_us;
+    bool update_flag;
+}CoulombState_t;
+
+extern CoulombState_t coulomb_counting;   
 
 void initNVS();
 void save_soc_to_nvs(float soc);

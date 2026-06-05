@@ -10,8 +10,8 @@
 #include "io.h"
 #include "statemachine.h"
 #include "config.h"
-#include "coloumb-counting.h"
 #include "tempsense.h"
+#include "coulombCounting.h"
 
 static const char* TAG = "CAN";
 
@@ -26,6 +26,7 @@ uint8_t bmsCurrentLimitData[8];
 uint8_t elconLimitsData[8];
 uint8_t oneWireTempsData_A[8];
 uint8_t oneWireTempsData_B[8];
+
 
 
 twai_frame_t packStatusMsg = {
@@ -151,7 +152,7 @@ void canTask(void *arg)
     inverterTimeout = pdTICKS_TO_MS(xTaskGetTickCount() - lastInverterTimestamp);
 
 
-    if (xQueueReceive(canRxQueue, &item,pdMS_TO_TICKS(10)) == pdTRUE) {
+    while (xQueueReceive(canRxQueue, &item, 0) == pdTRUE) {
       union CANBuffer_u rx_data;
       memcpy(rx_data.array, item.data, 8);
 
@@ -199,7 +200,7 @@ void canTask(void *arg)
         raiseTorchError(error, module);
 
       } else if (item.id == id_InverterCurrentInfo){
-        float inverterCurrent = rx_data.InverterCurrentInfo.INV_DC_Bus_Current / 10.0f;
+        inverterCurrent = rx_data.InverterCurrentInfo.INV_DC_Bus_Current / 10.0f;
         
       } else if (item.id == id_SOCRESET){
         reset_soc();
@@ -231,8 +232,8 @@ void canTask(void *arg)
     canTxBuffer.packStatus.AIRN = inputStates[AIRN_RELAY] & 0x1;
     canTxBuffer.packStatus.AIRP = inputStates[AIRP_RELAY] & 0x1;
     //TODO: rough SOC approx
-    canTxBuffer.packStatus.SOC_lo = 0;
-    canTxBuffer.packStatus.SOC_hi = 0;
+    canTxBuffer.packStatus.SoC= f2i_CAN(coulomb_counting.current_soc, 1,0);
+
     canTxBuffer.packStatus.packStatus = moboState.currentState;
     canTxBuffer.packStatus.fault = moboState.error;
     // memcpy(packStatusMsg.buffer, canTxBuffer.array, 8);
@@ -357,7 +358,10 @@ static bool can_rx_cb(twai_node_handle_t handle,
     return false;
   }
   BaseType_t hpTaskWoken = pdFALSE;
-  if((incoming_frame.header.id >= 1000 && incoming_frame.header.id <= 1060) || incoming_frame.header.id == id_InverterVoltageInfo){
+  if((incoming_frame.header.id >= 1000 && incoming_frame.header.id <= 1060) || 
+  incoming_frame.header.id == id_InverterVoltageInfo ||
+  incoming_frame.header.id == id_InverterCurrentInfo ||
+  incoming_frame.header.id == id_SOCRESET) {
       
 
       CanRxItem item = {0};
@@ -387,7 +391,7 @@ void initCAN(){
     .bit_timing.bitrate = 500000,  // 500 kbps bitrate
     .bit_timing.sp_permill = 250,   // Sample point at 25% of the bit time
     .bit_timing.ssp_permill = 750,  // Secondary sample point at 75% of the bit time
-    .tx_queue_depth = 5,           // Transmit queue depth set to 5
+    .tx_queue_depth = 20,           // Transmit queue depth set to 20
     .fail_retry_cnt = 1,            // retry tx 1 time on fail
   };
   ESP_ERROR_CHECK(twai_new_node_onchip(&node_config, &mobo_node_handle));

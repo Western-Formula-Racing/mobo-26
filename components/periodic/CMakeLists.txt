@@ -1,1 +1,1 @@
-idf_component_register(SRCS "periodic.c" INCLUDE_DIRS "." "../../include" REQUIRES "io" "CAN" "statemachine" "emeter" "coloumb-counting")
+idf_component_register(SRCS "periodic.c" INCLUDE_DIRS "." "../../include" REQUIRES "io" "CAN" "statemachine" "emeter" "coulombCounting")
