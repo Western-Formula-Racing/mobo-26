@@ -318,8 +318,8 @@ void canTask(void *arg)
     twai_node_transmit(mobo_node_handle, &bmsCurrentLimitMsg,pdMS_TO_TICKS(10));
   }
 
-  // send every 1s
-  if(txCounter>=100){
+  // send every 500ms
+  if(txCounter>=50){
     //charging message
     canTxBuffer.elconLimits.maxChargeVoltage_lo = ((CHARGE_TARGET * 10) & 0xFF00)>>8;
     canTxBuffer.elconLimits.maxChargeVoltage_hi = (CHARGE_TARGET * 10) & 0xFF;
