@@ -232,7 +232,7 @@ void canTask(void *arg)
     canTxBuffer.packStatus.AIRN = inputStates[AIRN_RELAY] & 0x1;
     canTxBuffer.packStatus.AIRP = inputStates[AIRP_RELAY] & 0x1;
     //TODO: rough SOC approx
-    canTxBuffer.packStatus.SoC= f2i_CAN(coulomb_counting.current_soc, 1,0);
+    canTxBuffer.packStatus.SoC= f2i_CAN(coulomb_counting.current_soc, 10,0);
 
     canTxBuffer.packStatus.packStatus = moboState.currentState;
     canTxBuffer.packStatus.fault = moboState.error;
