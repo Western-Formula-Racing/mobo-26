@@ -1,5 +1,5 @@
 #pragma once
-#include "state-of-charge.h"
+#include "coloumb-counting.h"
 #include <math.h>
 
 static const char* TAG = "soc"; \
@@ -52,8 +52,8 @@ void update_soc() {
     float dt = (float)(current_time_us-last_time_us)/1000000.0f;
     last_time_us = current_time_us;
 
-    float current_analog = Cursense_VtoA(analogVoltages[ANALOG_CURSENSE]);
-    // float current_analog = getInverterCurrent();
+    // float current_analog = Cursense_VtoA(analogVoltages[ANALOG_CURSENSE]);
+    float current_analog = getInverterCurrent();
 
     float amp_hour = current_analog*dt/3600;
     current_soc = (PACK_CAPACITY_AH-amp_hour)/100;

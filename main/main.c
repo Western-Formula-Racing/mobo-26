@@ -5,8 +5,7 @@
 #include "io.h"
 #include "periodic.h"
 #include "tempsense.h"
-
-#include "state-of-charge.h"
+#include "coloumb-counting.h"
 
 // Code entry point
 void app_main() {

@@ -10,7 +10,7 @@
 #include "io.h"
 #include "statemachine.h"
 #include "config.h"
-#include "state-of-charge.h"
+#include "coloumb-counting.h"
 #include "tempsense.h"
 
 static const char* TAG = "CAN";
