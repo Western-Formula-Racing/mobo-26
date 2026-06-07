@@ -13,9 +13,9 @@ enum canID{
   id_packInfo = 1057,
   id_BMSCurrentLimit = 514,
   id_ElconLimits = 403105268,
-  id_analogReading = 1058,
-  id_oneWireTemp_A = 1059,
-  id_oneWireTemp_B = 1060,
+  id_analogReading = 1063,
+  id_oneWireTemp_A = 1064,
+  id_oneWireTemp_B = 1065,
 
 };
 
