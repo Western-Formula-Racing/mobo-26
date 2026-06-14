@@ -10,6 +10,7 @@
 #include "io.h"
 #include "statemachine.h"
 #include "config.h"
+#include "tempsense.h"
 
 static const char* TAG = "CAN";
 
@@ -19,8 +20,12 @@ union CANBuffer_u canTxBuffer = {.data=0};
 
 uint8_t packStatusData[8];
 uint8_t packInfoData[8];
+uint8_t analogReadingData[8];
 uint8_t bmsCurrentLimitData[8];
 uint8_t elconLimitsData[8];
+uint8_t oneWireTempsData_A[8];
+uint8_t oneWireTempsData_B[8];
+
 
 twai_frame_t packStatusMsg = {
   .header.id = id_packStatus,
@@ -30,6 +35,34 @@ twai_frame_t packStatusMsg = {
   .buffer_len = 8,
   .buffer = packStatusData,
 };
+
+twai_frame_t analogReadingsMsg = {
+  .header.id = id_analogReading,
+  .header.ide = false,
+  .header.rtr = false,
+  .header.dlc = 8,
+  .buffer_len = 8,
+  .buffer = analogReadingData,
+};
+
+twai_frame_t oneWireTempsMsg_A = {
+  .header.id = id_oneWireTemp_A,
+  .header.ide = false,
+  .header.rtr = false,
+  .header.dlc = 8,
+  .buffer_len = 8,
+  .buffer = oneWireTempsData_A,
+};
+
+twai_frame_t oneWireTempsMsg_B = {
+  .header.id = id_oneWireTemp_B,
+  .header.ide = false,
+  .header.rtr = false,
+  .header.dlc = 8,
+  .buffer_len = 8,
+  .buffer = oneWireTempsData_B,
+};
+
 
 twai_frame_t packInfoMsg = {
   .header.id = id_packInfo,
@@ -223,6 +256,50 @@ void canTask(void *arg)
       ESP_LOGE(TAG, "PackInfo TX failed: %d\n", (int)err);
     }
 
+    //analogReadings
+    int16_t HV_VOL = f2i_CAN(Vsense_VtoV(analogVoltages[ANALOG_VSENSE]),10,0);
+    int16_t CUR_AMP = f2i_CAN(Cursense_VtoA(analogVoltages[ANALOG_CURSENSE]),10,0);
+    
+    canTxBuffer.analogReadings.HV_SENSE = HV_VOL;
+    canTxBuffer.analogReadings.CURR_SENSE = CUR_AMP;
+
+    memcpy(analogReadingsMsg.buffer, canTxBuffer.array, 8);
+    
+    err = twai_node_transmit(mobo_node_handle, &analogReadingsMsg, pdMS_TO_TICKS(10));
+    if (err != ESP_OK) {
+      ESP_LOGE(TAG, "analogReadings TX failed: %d\n", (int)err);
+    }
+
+    //OneWireTemp Readings 1-4
+    if(tempStatus.found!=0){
+      int16_t tSense1 = f2i_CAN(tempStatus.temp[0],100,0);
+      int16_t tSense2 = f2i_CAN(tempStatus.temp[1],100,0);
+      int16_t tSense3 = f2i_CAN(tempStatus.temp[2],100,0);
+      int16_t tSense4 = f2i_CAN(tempStatus.temp[3],100,0);
+
+      canTxBuffer.oneWireTemps_A.TEMPSENSE_1 = tSense1;
+      canTxBuffer.oneWireTemps_A.TEMPSENSE_2 = tSense2;
+      canTxBuffer.oneWireTemps_A.TEMPSENSE_3 = tSense3;
+      canTxBuffer.oneWireTemps_A.TEMPSENSE_4 = tSense4;
+
+      memcpy(oneWireTempsMsg_A.buffer, canTxBuffer.array, 8);
+      
+      err = twai_node_transmit(mobo_node_handle, &oneWireTempsMsg_A, pdMS_TO_TICKS(10));
+      if (err != ESP_OK) {
+        ESP_LOGE(TAG, "oneWireTemps_A TX failed: %d\n", (int)err);
+      }
+  }
+  //OneWireTemp Readings 5
+  if(tempStatus.found!=0){
+    int16_t tSense5 = f2i_CAN(tempStatus.temp[4],100,0);
+    canTxBuffer.oneWireTemps_B.TEMPSENSE_5 = tSense5;
+
+    memcpy(oneWireTempsMsg_B.buffer, canTxBuffer.array, 8);
+    err = twai_node_transmit(mobo_node_handle, &oneWireTempsMsg_B, pdMS_TO_TICKS(10));
+    if (err != ESP_OK) {
+      ESP_LOGE(TAG, "oneWireTemps_B TX failed: %d\n", (int)err);
+    }
+  }
     // //BMS Current limit to Cascadia Inverter
     canTxBuffer.BMSCurrentLimit.BMSChargeCurrent_lo = 10;
     canTxBuffer.BMSCurrentLimit.BMSChargeCurrent_hi = 0;
@@ -232,8 +309,8 @@ void canTask(void *arg)
     twai_node_transmit(mobo_node_handle, &bmsCurrentLimitMsg,pdMS_TO_TICKS(10));
   }
 
-  // send every 1s
-  if(txCounter>=100){
+  // send every 500ms
+  if(txCounter>=50){
     //charging message
     canTxBuffer.elconLimits.maxChargeVoltage_lo = ((CHARGE_TARGET * 10) & 0xFF00)>>8;
     canTxBuffer.elconLimits.maxChargeVoltage_hi = (CHARGE_TARGET * 10) & 0xFF;
@@ -302,7 +379,7 @@ void initCAN(){
     .bit_timing.bitrate = 500000,  // 500 kbps bitrate
     .bit_timing.sp_permill = 250,   // Sample point at 25% of the bit time
     .bit_timing.ssp_permill = 750,  // Secondary sample point at 75% of the bit time
-    .tx_queue_depth = 5,           // Transmit queue depth set to 5
+    .tx_queue_depth = 20,           // Transmit queue depth set to 20
     .fail_retry_cnt = 1,            // retry tx 1 time on fail
   };
   ESP_ERROR_CHECK(twai_new_node_onchip(&node_config, &mobo_node_handle));
@@ -424,7 +501,7 @@ void printCANInfo(){
   }
 }
 
-uint32_t getMaxCanTimeout(){
+uint32_t getMaxInverterTimeout(){
   //TODO: implement better timeout
   return inverterTimeout;
 }

@@ -1,0 +1,1 @@
+idf_component_register(SRCS "tempsense.c" INCLUDE_DIRS "." "../../include" REQUIRES "CAN" "statemachine" "onewire" "ds18x20")
