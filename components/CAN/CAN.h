@@ -13,8 +13,8 @@ enum canID{
   id_packInfo = 1057,
   id_BMSCurrentLimit = 514,
   id_ElconLimits = 403105268,
-  id_analogReading = 1058,
-  id_oneWireTemp = 1059,
+  id_analogReading = 1063,
+  id_oneWireTemp = 1065,
 };
 
 typedef struct {

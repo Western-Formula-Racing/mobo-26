@@ -349,6 +349,12 @@ static bool can_rx_cb(twai_node_handle_t handle,
 // init CAN
 void initCAN(){
   lastInverterTimestamp = xTaskGetTickCount();
+  lastModuleTimestamp[0] = xTaskGetTickCount();
+  lastModuleTimestamp[1] = xTaskGetTickCount();
+  lastModuleTimestamp[2] = xTaskGetTickCount();
+  lastModuleTimestamp[3] = xTaskGetTickCount();
+  lastModuleTimestamp[4] = xTaskGetTickCount();
+
   //create RX queue
   canRxQueue = xQueueCreate(300, sizeof(CanRxItem));
   //configure TWAI node
@@ -358,8 +364,8 @@ void initCAN(){
     .bit_timing.bitrate = 500000,  // 500 kbps bitrate
     .bit_timing.sp_permill = 250,   // Sample point at 25% of the bit time
     .bit_timing.ssp_permill = 750,  // Secondary sample point at 75% of the bit time
-    .tx_queue_depth = 5,           // Transmit queue depth set to 5
-    .fail_retry_cnt = 1,            // retry tx 1 time on fail
+    .tx_queue_depth = 20,           // Transmit queue depth set to 5
+    .fail_retry_cnt = 3,            // retry tx 1 time on fail
   };
   ESP_ERROR_CHECK(twai_new_node_onchip(&node_config, &mobo_node_handle));
   

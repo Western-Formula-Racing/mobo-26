@@ -24,7 +24,7 @@ dependencies:
   onewire:
     dependencies: []
     source:
-      path: C:\Users\david\Downloads\WFR\Firmware\mobo-26\components\onewire
+      path: /Users/mhmdabdlnabi/mobo-26/components/onewire
       type: local
     version: 1.1.0
 direct_dependencies:
