@@ -5,6 +5,7 @@
 #include "io.h"
 #include "periodic.h"
 #include "tempsense.h"
+#include "SOC.h"
 
 
 // Code entry point
@@ -18,10 +19,11 @@ void app_main() {
   esp_log_level_set("statemachine", CONFIG_LOG_MAXIMUM_LEVEL);
   
   //init functions go here
-  initIO(); 
+  initIO();
   initCAN();
+  initSOC();
 
-  
+
   //create periodic function timer
   TimerHandle_t periodicTimer = xTimerCreate("periodic", pdMS_TO_TICKS(10), pdTRUE, (void *) 1, periodicCallback);
 

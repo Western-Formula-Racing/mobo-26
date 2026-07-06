@@ -11,6 +11,7 @@
 #include "statemachine.h"
 #include "config.h"
 #include "tempsense.h"
+#include "SOC.h"
 
 static const char* TAG = "CAN";
 
@@ -222,9 +223,10 @@ void canTask(void *arg)
     canTxBuffer.packStatus.Latch = inputStates[LATCH_RELAY] & 0x1;
     canTxBuffer.packStatus.AIRN = inputStates[AIRN_RELAY] & 0x1;
     canTxBuffer.packStatus.AIRP = inputStates[AIRP_RELAY] & 0x1;
-    //TODO: rough SOC approx
-    canTxBuffer.packStatus.SOC_lo = 0;
-    canTxBuffer.packStatus.SOC_hi = 0;
+    // hybrid coulomb-count + OCV-corrected SOC estimate, telemetry only (see components/SOC)
+    int soc = f2i_CAN(getSOC(), 100, 0);
+    canTxBuffer.packStatus.SOC_lo = soc & 0xFF;
+    canTxBuffer.packStatus.SOC_hi = (soc & 0xFF00) >> 8;
     canTxBuffer.packStatus.packStatus = moboState.currentState;
     canTxBuffer.packStatus.fault = moboState.error;
     // memcpy(packStatusMsg.buffer, canTxBuffer.array, 8);

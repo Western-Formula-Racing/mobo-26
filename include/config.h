@@ -15,3 +15,12 @@
 
 #define MISSION_MODE // only critical faults, for racing
 #define INVERTER_PRECHARGE // precharge voltage from inverter
+
+// --- SOC estimation (hybrid coulomb-counting + ECM/OCV correction, VTC6 cell data) ---
+// telemetry only - never feeds back into the state machine / fault logic
+#define PACK_NUM_SERIES           100     // cells in series (5 modules x 20s)
+#define PACK_NUM_PARALLEL         6       // cells in parallel per series position (100s6p)
+#define SOC_OCV_CORRECTION_GAIN  0.02f    // per-second complementary-filter gain pulling the coulomb count toward the ECM-based OCV estimate
+#define SOC_IDLE_REST_MS          300000  // IDLE (AIRs open, guaranteed zero current) duration before hard-anchoring to the OCV table
+#define SOC_NVS_SAVE_INTERVAL_MS  60000   // minimum time between NVS writes (flash wear)
+#define SOC_NVS_SAVE_DELTA        0.5f    // minimum SOC change (%) required to trigger a save once the interval elapses

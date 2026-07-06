@@ -6,6 +6,7 @@
 #include "statemachine.h"
 #include "BMS.h"
 #include "tempsense.h"
+#include "SOC.h"
 
 static const char* TAG = "periodic";
 int periodicCount = 0;
@@ -26,6 +27,7 @@ void printInfo(){
   printf(">state:%d|np \n>error:%d|np \n", moboState.currentState, moboState.error);
   printf(">pack_voltage:%.2f\n", getPackVoltage());
   printf(">max_cell_voltage:%.3f\n", getMaxVoltage());
+  printf(">soc:%.2f\n", getSOC());
   printf(">CHARGE_EN: %d\n", gpio_get_level(GPIO_NUM_42));
   //ESP_LOGI(TAG,"> Digital Inputs: IMD: %d | BSPD: %d | LATCH: %d | AIRN: %d | AIRP: %d | CHARGE_EN %d",inputStates[IMD_RELAY],inputStates[BSPD_RELAY],inputStates[LATCH_RELAY],inputStates[AIRN_RELAY],inputStates[AIRP_RELAY],inputStates[CHARGE_EN]);
   //ESP_LOGI(TAG,"> Digital Outputs: BMS_OK: %d | PRECH_OK: %d | RED_LED: %d | GREEN_LED: %d",outputStates[OUTPUTS_BMS_OK],outputStates[OUTPUTS_PRECH_OK],outputStates[OUTPUTS_RED_LED],outputStates[OUTPUTS_GREEN_LED]);
@@ -41,6 +43,7 @@ void periodicCallback(TimerHandle_t xTimer){
   ioPeriodic(); // Digital/Analog IO
   // canTxPeriodic(); // send CAN messages
   stateMachinePeriodic(); // run state machine
+  socPeriodic(); // update hybrid SOC estimate (telemetry only)
   periodicCount++;
   if(periodicCount>10){
     outputStates[OUTPUTS_GREEN_LED] = !outputStates[OUTPUTS_GREEN_LED];
